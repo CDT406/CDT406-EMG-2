@@ -56,7 +56,7 @@ for epoch in range(100):
 model.save("elm_model.keras")
 
 converter = tf.lite.TFLiteConverter.from_keras_model(model) 
-tflite_model_quantized = converter.convert()
+tflite_model = converter.convert()
 
 with open('elm_model.tflite', 'wb') as f:     
-  f.write(tflite_model_quantized)
+  f.write(tflite_model)
