@@ -51,7 +51,7 @@ num_classes = 3  # 3 classes (0, 1, 2)
 model = ELMModel(input_dim, hidden_units, num_classes)
 
 # Input data
-df = pd.read_csv("data/raw/M6 Dataset/subject #1/cycle #1/P1C1S1M6F1O2", header=None)
+df = pd.read_csv("data/raw/M6 Dataset/subject #2/cycle #1/P2C1S1M6F1O2", header=None)
 # Assuming that each sample has multiple features and represents a time-series of sEMG data
 # Plot the first few rows (signals) for visualization
 
