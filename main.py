@@ -5,10 +5,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.model_selection import train_test_split
-from os_elm.os_elm import OS_ELM, softmax
+from os_elm.os_elm import OS_ELM
 from keras.datasets import mnist
 from keras.utils import to_categorical
+import logging
 import tqdm
+
+def softmax(a):
+    c = np.max(a, axis=-1).reshape(-1, 1)
+    exp_a = np.exp(a - c)
+    sum_exp_a = np.sum(exp_a, axis=-1).reshape(-1, 1)
+    return exp_a / sum_exp_a
 
 def mean_absolute_value(window):
     return np.mean(np.abs(window))
@@ -41,53 +48,92 @@ def extract_time_features(signal, window_size):
         ssc = slope_sign_changes(window)
 
         
-        features.append([mean, variance, skewness, kurtosis, mav, wl, zc, ssc])
+        #features.append([mean, variance, skewness, kurtosis, mav, wl, zc, ssc])
+        features.append([mean, variance, skewness, kurtosis])
     
     return np.array(features)
-# Ensure the data has the correct shape, it's a single row with 13000 features
-#print("Shape of data:", x_train.shape)
 
+def process_multiple_sensors(sensor_data, window_size):
+    all_features = []
+    for signal in sensor_data:
+        all_features.append(extract_time_features(signal, window_size))
+    
+    # Concatenate features from all sensors along the feature axis
+    combined_features = np.hstack(all_features)
+    return combined_features
+
+def process_multiple_persons(person_data, window_size):
+    all_features = []
+    for signal in person_data:
+        all_features.append(process_multiple_sensors(signal, window_size))
+    
+    # Concatenate features from all persons along the feature axis
+    combined_features = np.hstack(all_features)
+    return combined_features
+
+def load_wyoflex(person):
+    # Load the data from the CSV file
+    data = np.empty((4,), dtype=object)  # Initialize an empty array to hold the data
+    data[0] = pd.read_csv(f"Wyoflex/3 gester/VOLTAGE DATA/P{person}C1S1M6F1O2", header=None).values.flatten()
+    data[1] = pd.read_csv(f"Wyoflex/3 gester/VOLTAGE DATA/P{person}C1S2M6F1O2", header=None).values.flatten()
+    data[2] = pd.read_csv(f"Wyoflex/3 gester/VOLTAGE DATA/P{person}C1S3M6F1O2", header=None).values.flatten()
+    data[3] = pd.read_csv(f"Wyoflex/3 gester/VOLTAGE DATA/P{person}C1S4M6F1O2", header=None).values.flatten()
+    return data
+
+def load_wyoflex_all():
+    data = np.empty((28,), dtype=object)  # Initialize an empty array to hold the data
+    for i in range(1,29):
+       data[i-1] = load_wyoflex(i)
+    return data
 
 def main():
+    logging.basicConfig(level=logging.ERROR)
+
     window_size = 200
+
+    # Load the data
+    x_original = load_wyoflex_all()
+    x_train = process_multiple_persons(x_original, window_size)
+
     # Input data
-    df = pd.read_csv("data/raw/M6 Dataset/subject #1/cycle #1/P1C1S1M6F1O2", header=None)
-    # Assuming that each sample has multiple features and represents a time-series of sEMG data
-    # Plot the first few rows (signals) for visualization
-
-    x_original = df.values.flatten()
-    x_train = x_original
-
-    x_train = extract_time_features(x_train, window_size)
-
-    # Plot the original signal
-    plt.figure(figsize=(14, 8))
-    plt.plot(x_original, label='Original Signal', alpha=0.7)
-
-    # Plot the features
-    mav_values = x_train[:, 0]
-    wl_values = x_train[:, 1]
-    zc_values = x_train[:, 2]
-    ssc_values = x_train[:, 3]
-
-    # Create x-axis positions for the features
-    x_positions = np.arange(window_size // 2, window_size // 2 + len(x_train) * window_size, window_size)
-
-    # Plot each feature
-    plt.plot(x_positions, mav_values, 'o-', label='MAV', color='red')
-    plt.plot(x_positions, wl_values, 'o-', label='WL', color='green')
-    plt.plot(x_positions, zc_values, 'o-', label='ZC', color='blue')
-    plt.plot(x_positions, ssc_values, 'o-', label='SSC', color='purple')
-
-    plt.title('Original Signal with Overlapping Features')
-    plt.xlabel('Sample Index')
-    plt.ylabel('Amplitude')
-    plt.legend()
-    plt.show()
-
+    #x_original = load_wyoflex(1)
+    #x_train = process_multiple_sensors(x_original, window_size)  # Process data for all sensors
+    
+    #SINGLE SENSOR
+    #x_train =  pd.read_csv(f"Wyoflex/3 gester/VOLTAGE DATA/P1C1S1M1F1O1", header=None).values.flatten()
+    #x_train = extract_time_features(x_train, window_size)  # Process data for all sensors
+    
     t_train = np.zeros(x_train.shape[0])  # Initialize with zeros (13000 samples, now in windows)
     t_train[30:60] = 1  # Set labels 1 for samples from window 30 to 60 (6000 to 12000 index range)
     t_train[60:] = 2    # Set labels 2 for the remaining windows (12000 to 13000 index range)
+    
+    #x_Plot x_orfirst few rows (signals) for visualization
+    # Plot the original signal
+
+    # Plot the original signal
+    #plt.figure(figsize=(14, 8))
+    #plt.plot(x_original, label='Original Signal', alpha=0.7)
+
+    # Plot the features
+    #mav_values = x_train[:, 0]
+    #wl_values = x_train[:, 1]
+    #zc_values = x_train[:, 2]
+    #ssc_values = x_train[:, 3]
+
+    ## Create x-axis positions for the features
+    #x_positions = np.arange(window_size // 2, window_size // 2 + len(x_train) * window_size, window_size)
+
+    ## Plot each feature
+    #plt.plot(x_positions, mav_values, 'o-', label='MAV', color='red')
+    #plt.plot(x_positions, wl_values, 'o-', label='WL', color='green')
+    #plt.plot(x_positions, zc_values, 'o-', label='ZC', color='blue')
+    #plt.plot(x_positions, ssc_values, 'o-', label='SSC', color='purple')
+
+    #plt.title('Original Signal with Overlapping Features')
+    #plt.xlabel('Sample Index')
+    #plt.ylabel('Amplitude')
+    #plt.legend()
+    #plt.show()
 
     # Shuffling x_train and t_train in sync
     indices_train = np.random.permutation(x_train.shape[0])
@@ -101,7 +147,7 @@ def main():
     # Instantiate os-elm
     # ===========================================
     n_input_nodes = x_train.shape[1] # Number of features for each sample
-    n_hidden_nodes = 1024
+    n_hidden_nodes = 400
     n_output_nodes = 3
 
     os_elm = OS_ELM(
@@ -128,17 +174,20 @@ def main():
     # ===========================================
     n_classes = n_output_nodes
 
-    # normalize images' values within [0, 1]
-    x_train = x_train.reshape(-1, n_input_nodes)
-    x_test = x_test.reshape(-1, n_input_nodes)
+    # normalize values within [0, 1]
+    x_train = x_train.reshape(-1, n_input_nodes) 
     x_train = x_train.astype(np.float32)
+    x_train = (x_train - np.min(x_train)) / (np.max(x_train) - np.min(x_train))
+    x_test = x_test.reshape(-1, n_input_nodes)
     x_test = x_test.astype(np.float32)
+    x_test = (x_test - np.min(x_test)) / (np.max(x_test) - np.min(x_test))
 
     # convert label data into one-hot-vector format data.
     t_train = to_categorical(t_train, num_classes=n_classes)
     t_test = to_categorical(t_test, num_classes=n_classes)
     t_train = t_train.astype(np.float32)
     t_test = t_test.astype(np.float32)
+
 
     # divide the training dataset into two datasets:
     # (1) for the initial training phase
@@ -177,8 +226,8 @@ def main():
     # ===========================================
     # sample 10 validation samples from x_test
     n = 10
-    x = x_test[:n]
-    t = t_test[:n]
+    x = x_test
+    t = t_test
 
     # 'predict' method returns raw values of output nodes.
     y = os_elm.predict(x)
@@ -219,7 +268,7 @@ def main():
     concrete_func = predict_fn.get_concrete_function()
 
     # Convert the concrete function to TensorFlow Lite
-    converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
+    converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func], trackable_obj=os_elm)
     tflite_model = converter.convert()
 
     with open('elm_model.tflite', 'wb') as f:     
