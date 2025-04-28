@@ -30,18 +30,10 @@ def extract_time_features(signal, window_size=200):
 # Ensure the data has the correct shape, it's a single row with 13000 features
 #print("Shape of data:", x_train.shape)
 
-#plt.figure(figsize=(12, 6))
-#plt.plot(x_features[:200, 0])  # Plot the mean of each window as an example
-#plt.title("Extracted Feature: Mean of Each Window")
-#plt.xlabel("Window Index")
-#plt.ylabel("Mean Value")
-#plt.legend()
-#plt.show()
-
 
 def main():
     # Input data
-    df = pd.read_csv("data/raw/M6 Dataset/subject #2/cycle #1/P2C1S1M6F1O2", header=None)
+    df = pd.read_csv("data/raw/M6 Dataset/subject #1/cycle #1/P1C1S1M6F1O2", header=None)
     # Assuming that each sample has multiple features and represents a time-series of sEMG data
     # Plot the first few rows (signals) for visualization
 
@@ -50,19 +42,25 @@ def main():
     # Convert data from column vector to row vector (shape = 13000, 1)
     x_train = df.values
     x_train = x_train.flatten()  # Flatten to 1D array if it's 2D column vector
-    x_features = extract_time_features(x_train)
+    x_train = extract_time_features(x_train)
 
-    t_train = np.zeros(x_features.shape[0])  # Initialize with zeros (13000 samples, now in windows)
+    t_train = np.zeros(x_train.shape[0])  # Initialize with zeros (13000 samples, now in windows)
     t_train[30:60] = 1  # Set labels 1 for samples from window 30 to 60 (6000 to 12000 index range)
     t_train[60:] = 2    # Set labels 2 for the remaining windows (12000 to 13000 index range)
+
+    # Shuffling x_train and t_train in sync
+    indices_train = np.random.permutation(x_train.shape[0])
+    x_train = x_train[indices_train]
+    t_train = t_train[indices_train]
+
     # Train/test split
-    x_train, x_test, t_train, t_test = train_test_split(x_features, t_train, test_size=0.2, random_state=42)
+    x_train, x_test, t_train, t_test = train_test_split(x_train, t_train, test_size=0.2, random_state=42)
     
     # ===========================================
     # Instantiate os-elm
     # ===========================================
     n_input_nodes = x_train.shape[1] # Number of features for each sample
-    n_hidden_nodes = 10
+    n_hidden_nodes = 1024
     n_output_nodes = 3
 
     os_elm = OS_ELM(
