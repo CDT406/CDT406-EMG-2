@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.model_selection import train_test_split
-from os_elm.os_elm import OS_ELM
+from os_elm.os_elm import OS_ELM, softmax
 from keras.datasets import mnist
 from keras.utils import to_categorical
 import tqdm
@@ -90,16 +90,16 @@ def main():
     n_classes = n_output_nodes
 
     # normalize images' values within [0, 1]
-    #x_train = x_train.reshape(-1, n_input_nodes) / 255.
-    #x_test = x_test.reshape(-1, n_input_nodes) / 255.
-    #x_train = x_train.astype(np.float32)
-    #x_test = x_test.astype(np.float32)
+    x_train = x_train.reshape(-1, n_input_nodes)
+    x_test = x_test.reshape(-1, n_input_nodes)
+    x_train = x_train.astype(np.float32)
+    x_test = x_test.astype(np.float32)
 
     # convert label data into one-hot-vector format data.
-    #t_train = to_categorical(t_train, num_classes=n_classes)
-    #t_test = to_categorical(t_test, num_classes=n_classes)
-    #t_train = t_train.astype(np.float32)
-    #t_test = t_test.astype(np.float32)
+    t_train = to_categorical(t_train, num_classes=n_classes)
+    t_test = to_categorical(t_test, num_classes=n_classes)
+    t_train = t_train.astype(np.float32)
+    t_test = t_test.astype(np.float32)
 
     # divide the training dataset into two datasets:
     # (1) for the initial training phase
@@ -168,7 +168,19 @@ def main():
     # Save model
     # ===========================================
     print('saving model parameters...')
-    converter = tf.lite.TFLiteConverter.from_keras_model(os_elm) 
+    # Create a dummy input to trace the model
+    x_dummy = np.random.rand(1, n_input_nodes).astype(np.float32)
+
+    # Wrap the model's predict method with tf.function to generate a concrete function
+    @tf.function(input_signature=[tf.TensorSpec(shape=[None, n_input_nodes], dtype=tf.float32)])
+    def predict_fn(x):
+        return os_elm.predict(x)
+
+    # Get the concrete function
+    concrete_func = predict_fn.get_concrete_function()
+
+    # Convert the concrete function to TensorFlow Lite
+    converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
     tflite_model = converter.convert()
 
     with open('elm_model.tflite', 'wb') as f:     
