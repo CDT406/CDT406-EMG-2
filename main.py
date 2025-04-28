@@ -10,8 +10,20 @@ from keras.datasets import mnist
 from keras.utils import to_categorical
 import tqdm
 
+def mean_absolute_value(window):
+    return np.mean(np.abs(window))
+
+def waveform_length(window):
+    return np.sum(np.abs(np.diff(window)))
+
+def zero_crossings(window):
+    return np.sum(np.diff(np.sign(window)) != 0)
+
+def slope_sign_changes(window):
+    return np.sum(np.diff(np.sign(np.diff(window))) != 0)
+
 # Function to calculate time-domain features for each window
-def extract_time_features(signal, window_size=200):
+def extract_time_features(signal, window_size):
     features = []
     # Slide over the signal with the specified window size
     num_windows = len(signal) // window_size  # Total number of windows
@@ -23,8 +35,13 @@ def extract_time_features(signal, window_size=200):
         variance = np.var(window)
         skewness = stats.skew(window)
         kurtosis = stats.kurtosis(window)
+        mav = mean_absolute_value(window)
+        wl = waveform_length(window)
+        zc = zero_crossings(window)
+        ssc = slope_sign_changes(window)
+
         
-        features.append([mean, variance, skewness, kurtosis])
+        features.append([mean, variance, skewness, kurtosis, mav, wl, zc, ssc])
     
     return np.array(features)
 # Ensure the data has the correct shape, it's a single row with 13000 features
@@ -32,17 +49,41 @@ def extract_time_features(signal, window_size=200):
 
 
 def main():
+    window_size = 200
     # Input data
     df = pd.read_csv("data/raw/M6 Dataset/subject #1/cycle #1/P1C1S1M6F1O2", header=None)
     # Assuming that each sample has multiple features and represents a time-series of sEMG data
     # Plot the first few rows (signals) for visualization
 
-    x_train = df.values
+    x_original = df.values.flatten()
+    x_train = x_original
 
-    # Convert data from column vector to row vector (shape = 13000, 1)
-    x_train = df.values
-    x_train = x_train.flatten()  # Flatten to 1D array if it's 2D column vector
-    x_train = extract_time_features(x_train)
+    x_train = extract_time_features(x_train, window_size)
+
+    # Plot the original signal
+    plt.figure(figsize=(14, 8))
+    plt.plot(x_original, label='Original Signal', alpha=0.7)
+
+    # Plot the features
+    mav_values = x_train[:, 0]
+    wl_values = x_train[:, 1]
+    zc_values = x_train[:, 2]
+    ssc_values = x_train[:, 3]
+
+    # Create x-axis positions for the features
+    x_positions = np.arange(window_size // 2, window_size // 2 + len(x_train) * window_size, window_size)
+
+    # Plot each feature
+    plt.plot(x_positions, mav_values, 'o-', label='MAV', color='red')
+    plt.plot(x_positions, wl_values, 'o-', label='WL', color='green')
+    plt.plot(x_positions, zc_values, 'o-', label='ZC', color='blue')
+    plt.plot(x_positions, ssc_values, 'o-', label='SSC', color='purple')
+
+    plt.title('Original Signal with Overlapping Features')
+    plt.xlabel('Sample Index')
+    plt.ylabel('Amplitude')
+    plt.legend()
+    plt.show()
 
     t_train = np.zeros(x_train.shape[0])  # Initialize with zeros (13000 samples, now in windows)
     t_train[30:60] = 1  # Set labels 1 for samples from window 30 to 60 (6000 to 12000 index range)
