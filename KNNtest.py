@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 # ----------- Load features and labels -----------
 
-load_path = r"Wyoflex/3 gester/processed/features_labels_5to10s_O2.pkl"
+load_path = r"Wyoflex/3 gester/processed/features_labels_5_5to8_5s_O2.pkl"
 
 # Load X and y
 X, y = joblib.load(load_path)
@@ -23,7 +23,7 @@ print(f"Training set: {X_train.shape}, Testing set: {X_test.shape}")
 
 # ----------- Train KNN classifier -----------
 
-knn = KNeighborsClassifier(n_neighbors=3)  # 5 neighbors
+knn = KNeighborsClassifier(n_neighbors=11)  # 5 neighbors
 knn.fit(X_train, y_train)
 
 # ----------- Evaluate -----------
