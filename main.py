@@ -90,6 +90,9 @@ def extract_time_domain_features(signal):
     #remove infinity values
     features = [0 if np.isinf(f) else f for f in features]
 
+    #normalize the features between 0 and 1
+    features = [(f - min(features)) / (max(features) - min(features)) for f in features]
+    
     return features
 
 # Function to apply windowing to the EMG signal
@@ -245,9 +248,9 @@ def main():
     #plt.show()
 
     # Shuffling x_train and t_train in sync
-    #indices_train = np.random.permutation(x_train.shape[0])
-    #x_train = x_train[indices_train]
-    #t_train = t_train[indices_train]
+    indices_train = np.random.permutation(x_train.shape[0])
+    x_train = x_train[indices_train]
+    t_train = t_train[indices_train]
 
     # Train/test split
     x_train, x_test, t_train, t_test = train_test_split(x_train, t_train, test_size=0.2, random_state=42)
