@@ -66,7 +66,7 @@ def evaluate_model(model, x_test, y_test):
     return loss, accuracy
 
 
-def save_model(model, model_path="gru_model.h5"):
+def save_model(model, model_path="gru_model.keras"):
     model.save(model_path)
     print(f"Model saved to {model_path}")
     
@@ -109,11 +109,10 @@ if __name__ == "__main__":
     # Train model
     history = train_model(model, x_train, y_train)
     
-    plot_traning_history(history)
-
     # Evaluate model
     evaluate_model(model, x_test, y_test)
 
     # Save model
     save_model(model)
     
+    plot_traning_history(history)
