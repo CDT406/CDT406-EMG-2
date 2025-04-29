@@ -10,6 +10,7 @@ from keras.datasets import mnist
 from keras.utils import to_categorical
 import logging
 import tqdm
+import pywt
 
 def softmax(a):
     c = np.max(a, axis=-1).reshape(-1, 1)
@@ -17,17 +18,115 @@ def softmax(a):
     sum_exp_a = np.sum(exp_a, axis=-1).reshape(-1, 1)
     return exp_a / sum_exp_a
 
-def mean_absolute_value(window):
-    return np.mean(np.abs(window))
+# Function to extract time-domain features from a signal
+def extract_time_domain_features(signal):
+    features = []
+    N = len(signal)
+    # Mean Absolute Value (MAV)
+    mav = np.mean(np.abs(signal))
+    features.append(mav)
+    # Willison Amplitude (WAMP)
+    threshold = 0.1
+    wamp = np.sum(np.abs(np.diff(signal)) > threshold)
+    features.append(wamp)
+    # Zero Crossing (ZC)
+    zc = np.sum(np.diff(np.sign(signal)) != 0)
+    features.append(zc)
+    # Integrated EMG (IEMG)
+    iemg = np.sum(np.abs(signal))
+    features.append(iemg)
+    # Waveform Length (WL)
+    wl = np.sum(np.abs(np.diff(signal)))
+    features.append(wl)
+    # Mean Absolute Value Slope (MAVSLP)
+    mavslp = np.mean(np.abs(np.diff(signal)))
+    features.append(mavslp)
+    # Simple Square Integral (SSI)
+    ssi = np.sum(signal**2)
+    features.append(ssi)
+    # Variance of EMG (VAR)
+    var = np.var(signal)
+    features.append(var)
+    # Temporal Moment (TM3)
+    tm3 = np.mean(signal**3)
+    features.append(tm3)
+    # V-order (V)
+    v_order = np.mean(np.abs(signal)**3)**(1/3)
+    features.append(v_order)
+    # Log Detector (LOG)
+    log = np.exp(np.mean(np.log(np.abs(signal))))
+    features.append(log)
+    # Average Amplitude Change (AAC)
+    aac = np.mean(np.abs(np.diff(signal)))
+    features.append(aac)
+    # Difference Absolute Standard Deviation (DASDV)
+    dasdv = np.sqrt(np.mean(np.diff(signal)**2))
+    features.append(dasdv)
+    # Myopulse Percentage Rate (MYOP)
+    myop = np.mean(np.abs(signal) > threshold)
+    features.append(myop)
+    # Slope Sign Change (SSC)
+    ssc = np.sum(np.diff(np.sign(np.diff(signal))) != 0)
+    features.append(ssc)
+    # Integrated Absolute of Second Derivative (IASD)
+    iasd = np.sum(np.abs(np.diff(signal, n=2)))
+    features.append(iasd)
+    # Integrated Absolute of Third Derivative (IATD)
+    iatd = np.sum(np.abs(np.diff(signal, n=3)))
+    features.append(iatd)
+    # Integrated Exponential of Absolute Values (IEAV)
+    ieav = np.sum(np.exp(np.abs(signal)))
+    features.append(ieav)
+    # Integrated Absolute Log Values (IALV)
+    ialv = np.sum(np.log(np.abs(signal)))
+    features.append(ialv)
+    # Integrated Exponential (IE)
+    ie = np.sum(np.exp(signal))
+    features.append(ie)
 
-def waveform_length(window):
-    return np.sum(np.abs(np.diff(window)))
+    #make sure there is no NaN values
+    features = [0 if np.isnan(f) else f for f in features]
 
-def zero_crossings(window):
-    return np.sum(np.diff(np.sign(window)) != 0)
+    #remove infinity values
+    features = [0 if np.isinf(f) else f for f in features]
 
-def slope_sign_changes(window):
-    return np.sum(np.diff(np.sign(np.diff(window))) != 0)
+    return features
+
+# Function to apply windowing to the EMG signal
+def window_signal(signal, window_size, overlap):
+    step = int(window_size * (1 - overlap))
+    windows = []
+    for start in range(0, len(signal) - window_size + 1, step):
+        windows.append(signal[start:start + window_size])
+    return windows
+
+# Function to preprocess and extract features from EMG signals with wavelet transform
+def preprocess_and_extract_features(signal, window_size, overlap):
+    all_features = []
+    windows = window_signal(signal, window_size, overlap)
+    for window in windows:
+        # Normalize the window
+        window = (window - np.mean(window)) / np.std(window)
+        # Decompose the window using wavelet transform
+        coeffs = pywt.wavedec(window, 'db4', level=2)
+        # Extract features from each decomposed signal
+        features = []
+        for coeff in coeffs:
+            features.extend(extract_time_domain_features(coeff))
+        all_features.append(features)
+    return all_features
+
+# Load your EMG dataset
+# Assuming emg_signals is a list of EMG signal arrays and labels is the corresponding list of labels
+# emg_signals, labels = load_your_dataset()
+
+# Example data (replace with your actual data)
+#emg_signals = [np.random.randn(1000) for _ in range(100)]
+#labels = np.random.randint(0, 2, 100)
+
+# Preprocess and extract features
+#features = preprocess_and_extract_features(emg_signals, window_size, overlap)
+
 
 # Function to calculate time-domain features for each window
 def extract_time_features(signal, window_size):
@@ -47,30 +146,32 @@ def extract_time_features(signal, window_size):
         zc = zero_crossings(window)
         ssc = slope_sign_changes(window)
 
-        
         #features.append([mean, variance, skewness, kurtosis, mav, wl, zc, ssc])
         features.append([mean, variance, skewness, kurtosis])
     
     return np.array(features)
 
-def process_multiple_sensors(sensor_data, window_size):
+def process_multiple_sensors(sensor_data, window_size, overlap):
     all_features = []
     for signal in sensor_data:
-        all_features.append(extract_time_features(signal, window_size))
+        all_features.append(preprocess_and_extract_features(signal, window_size, overlap))
     
     # Concatenate features from all sensors along the feature axis
     combined_features = np.hstack(all_features)
     return combined_features
 
-def process_multiple_persons(person_data, window_size):
+def process_multiple_persons(person_data, window_size, overlap):
     all_features = []
     all_lables = []
     for signal in person_data:
-        x_train = process_multiple_sensors(signal, window_size)
+        x_train = process_multiple_sensors(signal, window_size, overlap)
         all_features.append(x_train)
         t_train = np.zeros(x_train.shape[0])  # Initialize with zeros (13000 samples, now in windows)
-        t_train[30:60] = 1  # Set labels 1 for samples from window 30 to 60 (6000 to 12000 index range)
-        t_train[60:] = 2    # Set labels 2 for the remaining windows (12000 to 13000 index range)
+
+        grip_index = round((6/13) * x_train.shape[0])
+
+        t_train[grip_index:grip_index*2] = 1  # Set labels 1 for samples from window 30 to 60 (6000 to 12000 index range)
+        t_train[grip_index*2:] = 2    # Set labels 2 for the remaining windows (12000 to 13000 index range)
         all_lables.append(t_train)
         
     combined_features = np.vstack(all_features)
@@ -95,11 +196,17 @@ def load_wyoflex_all():
 def main():
     logging.basicConfig(level=logging.ERROR)
 
-    window_size = 200
-
+    # Parameters for windowing
+    window_size = 250  # Example window size
+    overlap = 0.5  # 50% overlap
     # Load the data
     x_original = load_wyoflex_all()
-    x_train, t_train = process_multiple_persons(x_original, window_size)
+    #x_original[0] = load_wyoflex(1)
+    x_train, t_train = process_multiple_persons(x_original, window_size, overlap)
+    
+    #window_size = 200
+   # x_train, t_train = process_multiple_persons(x_original, window_size)
+    
 
     # Input data
     #x_original = load_wyoflex(1)
@@ -149,7 +256,7 @@ def main():
     # Instantiate os-elm
     # ===========================================
     n_input_nodes = x_train.shape[1] # Number of features for each sample
-    n_hidden_nodes = 250
+    n_hidden_nodes = 500
     n_output_nodes = 3
 
     os_elm = OS_ELM(
