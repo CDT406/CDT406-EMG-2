@@ -47,9 +47,16 @@ def build_model(input_shape):
     
     return model
 
+
 def train_model(model, x_train, y_train, epochs=5, batch_size=16):
-    model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size)
-    return model
+    return model.fit(
+        x_train,
+        y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_split=0.2,
+        verbose=1
+    )
 
 
 def evaluate_model(model, x_test, y_test):
@@ -66,6 +73,7 @@ def save_model(model, model_path="gru_model.h5"):
     
 def load_model(model_path="gru_model.h5"):
     from tensorflow.keras.models import load_model
+    
     model = load_model(model_path)
     print(f"Model loaded from {model_path}")
     return model
@@ -74,12 +82,14 @@ def load_model(model_path="gru_model.h5"):
 def plot_traning_history(history):
     import matplotlib.pyplot as plt
 
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.title('Model accuracy')
+    plt.figure(figsize=(10,4))
+    plt.plot(history.history['accuracy'], label='Train Acc')
+    plt.plot(history.history['val_accuracy'], label='Val Acc')
+    plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.legend()
+    plt.title('Training and Validation Accuracy')
+    plt.grid(True)
     plt.show()
 
 if __name__ == "__main__":
@@ -98,6 +108,8 @@ if __name__ == "__main__":
 
     # Train model
     history = train_model(model, x_train, y_train)
+    
+    plot_traning_history(history)
 
     # Evaluate model
     evaluate_model(model, x_test, y_test)
