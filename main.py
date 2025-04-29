@@ -64,12 +64,18 @@ def process_multiple_sensors(sensor_data, window_size):
 
 def process_multiple_persons(person_data, window_size):
     all_features = []
+    all_lables = []
     for signal in person_data:
-        all_features.append(process_multiple_sensors(signal, window_size))
-    
-    # Concatenate features from all persons along the feature axis
-    combined_features = np.hstack(all_features)
-    return combined_features
+        x_train = process_multiple_sensors(signal, window_size)
+        all_features.append(x_train)
+        t_train = np.zeros(x_train.shape[0])  # Initialize with zeros (13000 samples, now in windows)
+        t_train[30:60] = 1  # Set labels 1 for samples from window 30 to 60 (6000 to 12000 index range)
+        t_train[60:] = 2    # Set labels 2 for the remaining windows (12000 to 13000 index range)
+        all_lables.append(t_train)
+        
+    combined_features = np.vstack(all_features)
+    combined_lables = np.concatenate(all_lables)
+    return (combined_features, combined_lables)
 
 def load_wyoflex(person):
     # Load the data from the CSV file
@@ -93,7 +99,7 @@ def main():
 
     # Load the data
     x_original = load_wyoflex_all()
-    x_train = process_multiple_persons(x_original, window_size)
+    x_train, t_train = process_multiple_persons(x_original, window_size)
 
     # Input data
     #x_original = load_wyoflex(1)
@@ -102,10 +108,6 @@ def main():
     #SINGLE SENSOR
     #x_train =  pd.read_csv(f"Wyoflex/3 gester/VOLTAGE DATA/P1C1S1M1F1O1", header=None).values.flatten()
     #x_train = extract_time_features(x_train, window_size)  # Process data for all sensors
-    
-    t_train = np.zeros(x_train.shape[0])  # Initialize with zeros (13000 samples, now in windows)
-    t_train[30:60] = 1  # Set labels 1 for samples from window 30 to 60 (6000 to 12000 index range)
-    t_train[60:] = 2    # Set labels 2 for the remaining windows (12000 to 13000 index range)
     
     #x_Plot x_orfirst few rows (signals) for visualization
     # Plot the original signal
@@ -136,9 +138,9 @@ def main():
     #plt.show()
 
     # Shuffling x_train and t_train in sync
-    indices_train = np.random.permutation(x_train.shape[0])
-    x_train = x_train[indices_train]
-    t_train = t_train[indices_train]
+    #indices_train = np.random.permutation(x_train.shape[0])
+    #x_train = x_train[indices_train]
+    #t_train = t_train[indices_train]
 
     # Train/test split
     x_train, x_test, t_train, t_test = train_test_split(x_train, t_train, test_size=0.2, random_state=42)
@@ -147,7 +149,7 @@ def main():
     # Instantiate os-elm
     # ===========================================
     n_input_nodes = x_train.shape[1] # Number of features for each sample
-    n_hidden_nodes = 400
+    n_hidden_nodes = 250
     n_output_nodes = 3
 
     os_elm = OS_ELM(
