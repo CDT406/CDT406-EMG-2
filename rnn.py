@@ -26,7 +26,7 @@ else:
     print("No GPU available, using CPU")
 
 # --- Set Path to Your Dataset ---
-dataset_path = r'C:\Users\cmr21001\Desktop\CDT406-EMG-2-RNN\NinaPro_DB5'
+dataset_path = r'NinaPro_DB5'
 
 # --- Let user choose which subjects to include ---
 print("Available subjects: s1, s2, s3, s4, s5, s6, s7, s8, s9, s10")
