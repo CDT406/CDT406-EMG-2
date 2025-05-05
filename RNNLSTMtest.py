@@ -4,9 +4,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.utils import to_categorical
+from keras2tflite import convert_keras_to_tflite
 
 # ----------- Parameters -----------
 sequence_length = 3  # How many windows to stack into one sequence
@@ -71,7 +73,7 @@ print(f"Training set: {X_train.shape}, Testing set: {X_test.shape}")
 # ----------- Build LSTM Model -----------
 
 model = Sequential([
-    LSTM(64, input_shape=(sequence_length, X_seq.shape[2])),
+    LSTM(64, input_shape=(sequence_length, X_seq.shape[2]), unroll=True),
     Dense(32, activation='relu'),
     Dense(num_classes, activation='softmax')
 ])
@@ -88,7 +90,7 @@ model.summary()
 
 history = model.fit(
     X_train, y_train,
-    epochs=50,
+    epochs=1,
     batch_size=32,
     validation_split=0.2,
     verbose=1
@@ -98,6 +100,16 @@ history = model.fit(
 
 test_loss, test_accuracy = model.evaluate(X_test, y_test, verbose=0)
 print(f"\n✅ LSTM Test Accuracy: {test_accuracy*100:.2f}%")
+
+# Convert the Keras model to TFLite
+output_tflite_path = "rnn.tflite"
+tflite_model = convert_keras_to_tflite(model, output_tflite_path)
+# Save the model.
+
+with open(output_tflite_path, 'wb') as f:
+    f.write(tflite_model)
+
+print(f"TFLite model saved to {output_tflite_path}")
 
 # ----------- Plot Training History -----------
 
