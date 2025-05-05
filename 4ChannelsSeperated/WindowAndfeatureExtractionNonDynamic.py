@@ -10,8 +10,8 @@ overlap = 128      # samples
 sampling_rate = 1000  # Hz
 
 # Paths
-data_folder = r"Wyoflex/3 gester/VOLTAGE DATA"
-save_folder = r"Wyoflex/3 gester/FixedSegmentProcessed/4channel_byfile"
+data_folder = r"datasets/Wyoflex/3 gester/VOLTAGE DATA"
+save_folder = r"datasets/Wyoflex/3 gester/FixedSegmentProcessed/4channel_byfile"
 os.makedirs(save_folder, exist_ok=True)
 
 # Output filename

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 # ----------- Load features and labels -----------
 
-load_path = r"Wyoflex/3 gester/processed/features_labels_5_5to8_5s_O2.pkl"
+load_path = r"datasets/Wyoflex/3 gester/processed/features_labels_5_5to8_5s_O2.pkl"
 
 # Load X and y
 X, y = joblib.load(load_path)

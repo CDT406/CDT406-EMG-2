@@ -15,8 +15,8 @@ after_peak_samples = 600   # 0.6s
 total_movement_samples = before_peak_samples + after_peak_samples
 
 # Paths
-data_folder = r"Wyoflex/3 gester/VOLTAGE DATA"
-save_folder = r"Wyoflex/3 gester/DynamicProcessed/4channel"
+data_folder = r"datasets/Wyoflex/3 gester/VOLTAGE DATA"
+save_folder = r"datasets/Wyoflex/3 gester/DynamicProcessed/4channel"
 os.makedirs(save_folder, exist_ok=True)
 
 # Output file

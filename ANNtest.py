@@ -10,7 +10,7 @@ from tensorflow.keras.utils import to_categorical
 
 # ----------- Load features and labels -----------
 
-load_path = r"Wyoflex/3 gester/processed/features_labels_P1_dynamic_O2_W384.pkl"
+load_path = r"datasets/Wyoflex/3 gester/processed/features_labels_P1_dynamic_O2_W384.pkl"
 
 # Load X and y
 X, y = joblib.load(load_path)

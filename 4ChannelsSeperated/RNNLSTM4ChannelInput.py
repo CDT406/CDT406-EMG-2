@@ -13,7 +13,7 @@ sequence_length = 10   # How many windows to stack into one sequence
 num_classes = 3  # M1, M2, M6
 
 # ----------- Load Features and Labels -----------
-load_path = r"Wyoflex/3 gester/DynamicProcessed/4channel/features_labels_ALL_4channels_dynamic_O2_W64.pkl"
+load_path = r"datasets/Wyoflex/3 gester/DynamicProcessed/4channel/features_labels_ALL_4channels_dynamic_O2_W64.pkl"
 
 X, y = joblib.load(load_path)
 print(f"Loaded feature matrix shape: {X.shape}")
