@@ -14,7 +14,7 @@ sequence_length = 3
 num_classes = 3  # M1, M2, M6
 
 # ----------- Load Preprocessed Data -----------
-load_path = r"Wyoflex/3 gester/FixedSegmentProcessed/4channel_byfile/features_by_file_5to9s_W256.pkl"
+load_path = r"datasets/Wyoflex/3 gester/FixedSegmentProcessed/4channel_byfile/features_by_file_5to9s_W256.pkl"
 data_by_file = joblib.load(load_path)
 
 # ----------- Split by Cycle -----------
