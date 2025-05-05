@@ -10,11 +10,11 @@ overlap = 100            # 50% overlap
 wamp_threshold = 0.02    # WAMP threshold
 
 # Input and output paths
-input_folder = "datasets/official"
+input_folder = "official"
 output_dir = "processed_output"
 os.makedirs(output_dir, exist_ok=True)
 
-output_file = f"features_labels_structured_W{window_size}_O{overlap}_WAMPth{int(wamp_threshold*1000)}.pkl"
+output_file = f"original_features_labels_structured_W{window_size}_O{overlap}_WAMPth{int(wamp_threshold*1000)}.pkl"
 output_path = os.path.join(output_dir, output_file)
 
 # ----------- Feature Functions -----------
@@ -47,9 +47,36 @@ def get_majority_label(labels):
 
 # ----------- Signal Processing -----------
 
+# def process_file(file_path):
+#     df = pd.read_csv(file_path, header=None, names=['timestamp', 'frequency', 'label'])
+#     signal = df['frequency'].values
+#     labels = df['label'].values
+
+#     step = window_size - overlap
+#     num_windows = (len(signal) - window_size) // step + 1
+
+#     X = []
+#     y = []
+
+#     for i in range(num_windows):
+#         start = i * step
+#         end = start + window_size
+#         window = signal[start:end]
+#         label_window = labels[start:end]
+
+#         if len(window) == window_size:
+#             features = extract_features(window)
+#             majority_label = get_majority_label(label_window)
+#             X.append(features)
+#             y.append(majority_label)
+
+#     return np.array(X), np.array(y)
+
 def process_file(file_path):
-    df = pd.read_csv(file_path, header=None, names=['time', 'voltage', 'label'])
-    signal = df['voltage'].values
+    # Skip the first line
+    df = pd.read_csv(file_path, skiprows=1, header=None, names=['timestamp', 'frequency', 'label'])
+    
+    signal = df['frequency'].values
     labels = df['label'].values
 
     step = window_size - overlap
