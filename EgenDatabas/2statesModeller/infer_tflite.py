@@ -1,0 +1,129 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import tflite_runtime.interpreter as tflite
+
+# ----------- Parameters -----------
+window_size = 200
+overlap = 100
+wamp_threshold = 0.02
+sequence_length = 3
+
+# ----------- Feature Functions -----------
+def compute_mav(window):
+    return np.mean(np.abs(window))
+
+def compute_wl(window):
+    return np.sum(np.abs(np.diff(window)))
+
+def compute_wamp(window, threshold=wamp_threshold):
+    return np.sum(np.abs(np.diff(window)) > threshold)
+
+def compute_mavs(window):
+    half = len(window) // 2
+    return np.abs(compute_mav(window[:half]) - compute_mav(window[half:]))
+
+def extract_features(window):
+    return [
+        compute_mav(window),
+        compute_wl(window),
+        compute_wamp(window),
+        compute_mavs(window)
+    ]
+
+# ----------- Load TFLite Model -----------
+interpreter = tflite.Interpreter(model_path="model.tflite")
+interpreter.allocate_tensors()
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+print("✅ TFLite model loaded.")
+
+# ----------- Feature Extraction -----------
+def extract_features_from_csv(file_path):
+    df = pd.read_csv(file_path, skiprows=1, header=None, names=['timestamp', 'frequency', 'label'])
+    signal = df['frequency'].values
+    step = window_size - overlap
+    num_windows = (len(signal) - window_size) // step + 1
+
+    X = []
+    window_positions = []
+    for i in range(num_windows):
+        start = i * step
+        end = start + window_size
+        window = signal[start:end]
+
+        if len(window) == window_size:
+            features = np.array(extract_features(window), dtype=np.float32)
+            X.append(features)
+            window_positions.append((start, end))
+
+    X = np.nan_to_num(np.array(X), nan=0.0, posinf=0.0, neginf=0.0)
+    return signal, X, window_positions
+
+# ----------- Sequence Maker -----------
+def make_sequences(X, window_positions, seq_length=3):
+    sequences = []
+    sequence_positions = []
+    for i in range(len(X) - seq_length + 1):
+        seq = X[i:i+seq_length]
+        sequences.append(seq)
+        sequence_positions.append(window_positions[i + seq_length // 2])
+    return np.array(sequences, dtype=np.float32), sequence_positions
+
+# ----------- Extract True Labels -----------
+def extract_labels_from_csv(file_path, window_positions, seq_length=3):
+    df = pd.read_csv(file_path, skiprows=1, header=None, names=['timestamp', 'frequency', 'label'])
+    labels = df['label'].values
+    center_labels = []
+
+    for i in range(len(window_positions) - seq_length + 1):
+        mid_start, mid_end = window_positions[i + seq_length // 2]
+        mid_label = labels[mid_start:mid_end]
+        bin_label = np.array([0 if l == 0 else 1 for l in mid_label])  # 1,2,3 → 1
+        label = 1 if bin_label.sum() > len(bin_label) / 2 else 0
+        center_labels.append(label)
+
+    return np.array(center_labels)
+
+# ----------- Inference & Plotting -----------
+file_path = "datasets/augmented_data/9/aug_1.csv"
+signal, X_infer, window_positions = extract_features_from_csv(file_path)
+
+if len(X_infer) < sequence_length:
+    print("⚠️ Not enough data to form sequences.")
+else:
+    X_seq, seq_positions = make_sequences(X_infer, window_positions, sequence_length)
+    
+    # Run inference with TFLite
+    predictions = []
+    for sample in X_seq:
+        input_data = np.expand_dims(sample, axis=0).astype(np.float32)  # shape (1, 3, 4)
+        interpreter.set_tensor(input_details[0]['index'], input_data)
+        interpreter.invoke()
+        output = interpreter.get_tensor(output_details[0]['index'])
+        predictions.append(output[0])
+
+    predictions = np.array(predictions)
+    predicted_classes = predictions.argmax(axis=-1)
+    true_labels = extract_labels_from_csv(file_path, window_positions, sequence_length)
+
+    # ----------- Plotting -----------
+    plt.figure(figsize=(15, 5))
+    plt.plot(signal, color='gray', linewidth=1, label='sEMG Signal')
+
+    correct = 0
+    for (start, end), pred, true in zip(seq_positions, predicted_classes, true_labels):
+        if pred == true:
+            color = 'green'
+            correct += 1
+        else:
+            color = 'blue'
+        plt.axvspan(start, end, facecolor=color, alpha=0.3)
+
+    accuracy = correct / len(true_labels) * 100
+    plt.title(f"sEMG Signal with Predictions (Green=Correct, Blue=Wrong) | Accuracy: {accuracy:.2f}%")
+    plt.xlabel("Sample Index")
+    plt.ylabel("Amplitude")
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
