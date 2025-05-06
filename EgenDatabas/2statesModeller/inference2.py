@@ -31,6 +31,7 @@ def extract_features(window):
         compute_mavs(window)
     ]
 
+
 # ----------- Load Model -----------
 model = keras.models.load_model("model.keras")
 print("✅ Model loaded.")
@@ -84,7 +85,7 @@ def extract_labels_from_csv(file_path, window_positions, seq_length=3):
     return np.array(center_labels)
 
 # ----------- Run Inference and Plot -----------
-file_path = "datasets/augmented_data/1/aug_1.csv"
+file_path = "datasets/augmented_data/9/aug_1.csv"
 signal, X_infer, window_positions = extract_features_from_csv(file_path)
 
 if len(X_infer) < sequence_length:
