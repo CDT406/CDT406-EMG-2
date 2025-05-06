@@ -5,6 +5,15 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, InputLayer
 from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import classification_report
+import tensorflow as tf
+
+def convert_keras_to_tflite(keras_model, output_path):
+    # Convert the model.
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter.experimental_new_converter = True
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS, tf.lite.OpsSet.SELECT_TF_OPS]
+    tflite_model = converter.convert()
+    return tflite_model
 
 # ----------- Parameters -----------
 sequence_length = 3
@@ -62,8 +71,8 @@ y_val_cat = to_categorical(y_val, num_classes=2)
 
 # ----------- Define LSTM Model -----------
 model = Sequential([
-    InputLayer(input_shape=(sequence_length, X_train.shape[2])),
-    LSTM(15),
+    InputLayer(input_shape=(sequence_length, X_train.shape[2]), unroll=True),
+    LSTM(15, unroll=True),
     Dense(6, activation='relu'),
     Dense(2, activation='softmax')
 ])
@@ -90,3 +99,13 @@ y_true_labels = np.argmax(y_val_cat, axis=1)
 
 print("\n--- Classification Report (Rest vs Hold) ---")
 print(classification_report(y_true_labels, y_pred_labels, target_names=["Rest", "Hold"]))
+
+# Convert the Keras model to TFLite
+output_tflite_path = "rnn.tflite"
+tflite_model = convert_keras_to_tflite(model, output_tflite_path)
+# Save the model.
+
+with open(output_tflite_path, 'wb') as f:
+    f.write(tflite_model)
+
+print(f"TFLite model saved to {output_tflite_path}")
