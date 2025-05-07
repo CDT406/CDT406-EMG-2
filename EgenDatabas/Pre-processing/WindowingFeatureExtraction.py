@@ -45,32 +45,6 @@ def extract_features(window):
 def get_majority_label(labels):
     return Counter(labels).most_common(1)[0][0]
 
-# ----------- Signal Processing -----------
-
-# def process_file(file_path):
-#     df = pd.read_csv(file_path, header=None, names=['timestamp', 'frequency', 'label'])
-#     signal = df['frequency'].values
-#     labels = df['label'].values
-
-#     step = window_size - overlap
-#     num_windows = (len(signal) - window_size) // step + 1
-
-#     X = []
-#     y = []
-
-#     for i in range(num_windows):
-#         start = i * step
-#         end = start + window_size
-#         window = signal[start:end]
-#         label_window = labels[start:end]
-
-#         if len(window) == window_size:
-#             features = extract_features(window)
-#             majority_label = get_majority_label(label_window)
-#             X.append(features)
-#             y.append(majority_label)
-
-#     return np.array(X), np.array(y)
 
 def process_file(file_path):
     # Skip the first line
@@ -144,3 +118,34 @@ if records:
     print(f"\n✅ Saved {len(records)} windows to: {output_path}")
 else:
     print("❌ No data was processed.")
+
+
+
+
+
+# ----------- Signal Processing -----------
+
+# def process_file(file_path):
+#     df = pd.read_csv(file_path, header=None, names=['timestamp', 'frequency', 'label'])
+#     signal = df['frequency'].values
+#     labels = df['label'].values
+
+#     step = window_size - overlap
+#     num_windows = (len(signal) - window_size) // step + 1
+
+#     X = []
+#     y = []
+
+#     for i in range(num_windows):
+#         start = i * step
+#         end = start + window_size
+#         window = signal[start:end]
+#         label_window = labels[start:end]
+
+#         if len(window) == window_size:
+#             features = extract_features(window)
+#             majority_label = get_majority_label(label_window)
+#             X.append(features)
+#             y.append(majority_label)
+
+#     return np.array(X), np.array(y)

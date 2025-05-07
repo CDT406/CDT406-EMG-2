@@ -4,6 +4,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, InputLayer
 from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import classification_report
+import matplotlib.pyplot as plt
 
 # ----------- Load Training Data -----------
 train_path = "../Pre-processing/processed_output/features_labels_structured_W200_O100_WAMPth20.pkl"
@@ -63,3 +64,5 @@ y_pred_labels = np.argmax(y_pred, axis=1)
 y_true_labels = np.argmax(y_val_cat, axis=1)
 
 print(classification_report(y_true_labels, y_pred_labels, target_names=["Rest", "Grip", "Hold", "Release"]))
+
+model.save("semg_model.h5")
