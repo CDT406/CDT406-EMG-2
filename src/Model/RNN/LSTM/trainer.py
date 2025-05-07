@@ -13,7 +13,7 @@ def train_and_evaluate(model, X_train, y_train, X_val, y_val, num_classes=2, epo
 
     model.fit(
         X_train, y_train_cat,
-        epochs=epochs,
+        epochs=15,
         batch_size=batch_size,
         validation_data=(X_val, y_val_cat),
         verbose=1
@@ -29,4 +29,4 @@ def train_and_evaluate(model, X_train, y_train, X_val, y_val, num_classes=2, epo
     print("\n--- Classification Report (Rest vs Hold) ---")
     print(classification_report(y_true_labels, y_pred_labels, target_names=["Rest", "Hold"]))
 
-    return model
+    return accuracy, len(y_train), len(y_val)
