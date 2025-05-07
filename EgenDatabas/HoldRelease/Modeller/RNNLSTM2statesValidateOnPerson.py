@@ -8,7 +8,7 @@ from sklearn.metrics import classification_report
 
 # ----------- Parameters -----------
 sequence_length = 3
-data_path = "EgenDatabas/HoldRelease/Pre-processing/processed_output/features_labels_W200_O100_WAMPth20_true_cycles.pkl"
+data_path = "EgenDatabas/HoldRelease/Pre-processing/processed_output/features_labels_W200_O100_WAMPth20_true_cycles_filtered.pkl"
 
 # ----------- Load Processed Data -----------
 records = joblib.load(data_path)
