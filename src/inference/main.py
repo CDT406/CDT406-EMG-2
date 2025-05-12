@@ -1,10 +1,13 @@
 from led_control import LedControl
+from analogInput import SensorInput
+from data_process import DataLoader
 
 
 
 if __name__ == '__main__':
     led_control = LedControl()
-    # data_load = DataLoader()
+    analog_input = SensorInput()
+    data_process = DataLoader()
     # model = ModelLoader()
     
     
