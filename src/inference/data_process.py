@@ -1,6 +1,7 @@
 import joblib
 import io, os.path
 from feature_extraction import extract_features
+from collections import deque
 
 
 
@@ -23,14 +24,34 @@ class DataProcess:
     def __init__(self, config, data_input):
         self.config = config
         self.data_input = data_input
-        self.buffer = []
-        self.processed_windows = []
+        self.buffer = deque()
+        self.processed_windows = deque()
+        
+        # Need multiple windows in buffer due to window overlap
+        while (len(self.buffer) < self.config.pre_buffer_count):
+            if (self.data_input.has_next()):  # non-blocking, busy-wait
+                window = self.data_input.next()
+                processed_window = filter_window(window)
+                self.buffer.append()
+        
+        self.process_windows()
+        
+        
+    def filter_window(self, window):
+        return bandpass_filter(
+            signal=window,
+            lowcut=self.config.low_cut,
+            highcut=self.config.high_cut,
+            fs=self.config.sampling_rate,
+            )
         
 
-    def get_window(self):
-        # Need multiple windows in buffer due to window overlap
-        while (len(self.buffer) <= self.config.window_overlap):
-            self.buffer.append(self.data_input.get_window())
+    def get_next_window(self):
+        while (not self.data_input.has_next()):
+            continue
+            
+        self.buffer.popleft()    
+        self.buffer.append(self.data_input.next())
             
         self.process_windows()
 
@@ -40,7 +61,7 @@ class DataProcess:
             
             
     def process_windows(self):
-        print("farts")
+        
 
        
         

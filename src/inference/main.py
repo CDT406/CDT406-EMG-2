@@ -13,10 +13,7 @@ if __name__ == '__main__':
     # model = ModelLoader()
     
     
-    while 1:
-        if (not data_input.has_next()):
-            continue
-            
+    while 1:           
         window = data_process.get_window()    
         # model.set_input_window(window)
         # output_state = model.get_output_state()
