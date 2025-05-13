@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import tflite_runtime.interpreter as tflite
+from tensorflow.lite.python.interpreter import Interpreter
 
 # ----------- Parameters -----------
 window_size = 200
