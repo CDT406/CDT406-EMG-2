@@ -14,3 +14,4 @@ class Config:
         self.window_overlap = 2  # 2 -> 50%
         self.window_size = 200
         self.frequency = 1000  # input frequency from semg
+        self.model = "model.tflite"
