@@ -14,7 +14,7 @@ if __name__ == '__main__':
     
     
     while 1:           
-        window = data_process.get_window()    
+        window = data_process.get_next_window()    
         # model.set_input_window(window)
         # output_state = model.get_output_state()
         # led_control.setState(output_state)

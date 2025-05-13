@@ -30,9 +30,8 @@ class DataProcess:
         # Need multiple windows in buffer due to window overlap
         while (len(self.buffer) < self.config.pre_buffer_count):
             if (self.data_input.has_next()):  # non-blocking, busy-wait
-                window = self.data_input.next()
-                processed_window = filter_window(window)
-                self.buffer.append()
+                processed_window = self.filter_window(self.data_input.next())
+                self.buffer.append(processed_window)
         
         self.process_windows()
         
@@ -43,7 +42,8 @@ class DataProcess:
             lowcut=self.config.low_cut,
             highcut=self.config.high_cut,
             fs=self.config.sampling_rate,
-            )
+            order=self.config.filter_order
+        )
         
 
     def get_next_window(self):
