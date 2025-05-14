@@ -1,5 +1,4 @@
-import joblib
-import io, os.path
+import numpy as np
 from feature_extraction import extract_features
 from collections import deque
 
@@ -24,19 +23,11 @@ class DataProcess:
     def __init__(self, config, data_input):
         self.config = config
         self.data_input = data_input
-        self.buffer = deque()
-        self.processed_windows = deque()
-        
-        # Need multiple windows in buffer due to window overlap
-        while (len(self.buffer) < self.config.pre_buffer_count):
-            if (self.data_input.has_next()):  # non-blocking, busy-wait
-                processed_window = self.filter_window(self.data_input.next())
-                self.buffer.append(processed_window)
-        
-        self.process_windows()
+        self.buffer = deque(maxlen=config.window_overlap)
+        self.step = config.window_size // config.window_overlap      
         
         
-    def filter_window(self, window):
+    def _filter_window(self, window):
         return bandpass_filter(
             signal=window,
             lowcut=self.config.low_cut,
@@ -47,21 +38,26 @@ class DataProcess:
         
 
     def get_next_window(self):
-        while (not self.data_input.has_next()):
-            continue
-            
-        self.buffer.popleft()    
-        self.buffer.append(self.data_input.next())
-            
-        self.process_windows()
-
-        self.buffer.remove(0)
-
-        return self.buffer[-1]  # Always last element
-            
-            
-    def process_windows(self):
+        if (self.buffer.count == self.buffer.maxlen):
+            self.buffer.popleft()    
         
+        # Need multiple windows due to window overlap
+        while (len(self.buffer) < self.config.pre_buffer_count):
+            if (self.data_input.has_next()):  # non-blocking, busy-wait
+                next_window = self.data_input.next()
+                self.buffer.append(next_window)  # TODO: Decide where to filter, here or in process_window?
+            else:
+                return None
+        
+        window = np.array(self.buffer).flatten()[self.step:self.step + self.config.window_size]
+        processed_window = self._process_window(window) 
+        
+        self.buffer.popleft()    
+
+        return processed_window  
+            
+            
+    def _process_window(self, window):
+        return window  # TODO: Add processing
 
        
-        

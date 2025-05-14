@@ -1,5 +1,5 @@
 from led_control import LedControl
-from analog_input import SensorInput
+from analog_input import SensorInput, FileInput
 from data_process import DataProcess
 from config import Config
 
