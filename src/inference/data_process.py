@@ -1,7 +1,7 @@
 import numpy as np
 from feature_extraction import extract_features, bandpass_filter
 from collections import deque
-
+from config import Normalization
 
 
 #  Read -> Windowing -> Filter -> Feature Extraction -> Model -> Output
@@ -35,6 +35,15 @@ class DataProcess:
         while (len(self.buffer) < self.config.buffer_count):
             if (self.data_input.has_next()):  # non-blocking, busy-wait
                 next_window = self.data_input.next()
+
+                #normalize the window
+                if self.config.normalization == Normalization.No:
+                    pass
+                elif self.config.normalization == Normalization.MinMax:
+                    next_window = (next_window - np.min(next_window)) / (np.max(next_window) - np.min(next_window))
+                elif self.config.normalization == Normalization.MeanStd:
+                    next_window = (next_window - np.mean(next_window)) / np.std(next_window)
+
                 self.buffer.append(next_window)  # TODO: Decide where to filter, here or in process_window?
             else:
                 return None
@@ -52,17 +61,21 @@ class DataProcess:
 
         f_data = np.array(self.finalized_data, dtype=np.float32)
         self.finalized_data.popleft()  # Reset for next batch
-        return f_data
+        return np.array([f_data])
 
 
     def _process_window(self, window):
         filtered_window = self._bandpass_filter(window)
         
         if (len(self.config.features) > 0):
-            return extract_features(
+            features = extract_features(
                 window=filtered_window,
                 features=self.config.features,
                 wamp_threshold=self.config.wamp_threshold
             )
+
+            #TODO How do we do normalization when the only have one of each feature?
+
+            return features
         else:
             return filtered_window 

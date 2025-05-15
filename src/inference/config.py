@@ -1,4 +1,9 @@
+from enum import Enum
 
+class Normalization(Enum):
+    No = 1
+    MinMax = 2
+    MeanStd = 3
 
 class Config:
 
@@ -18,3 +23,4 @@ class Config:
         self.model = "model.tflite"
         self.file_path = 'src/inference/output.csv'
         self.features = ['mav', 'wl', 'wamp', 'mavs']
+        self.normalization = Normalization.MeanStd
