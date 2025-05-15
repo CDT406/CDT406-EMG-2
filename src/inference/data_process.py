@@ -7,17 +7,6 @@ from collections import deque
 #  Read -> Windowing -> Filter -> Feature Extraction -> Model -> Output
 
 
-def bandpass_filter(signal, lowcut, highcut, fs, order=4):
-    from scipy.signal import butter, filtfilt
-    
-    nyquist = 0.5 * fs
-    low = lowcut / nyquist
-    high = highcut / nyquist
-    b, a = butter(order, [low, high], btype='band')
-    
-    return filtfilt(b, a, signal)
-
-
 class DataProcess:
 
     def __init__(self, config, data_input):
