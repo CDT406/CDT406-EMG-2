@@ -1,14 +1,8 @@
-import tflite_runtime as tflite
+import tflite_runtime.interpreter as tflite
 
 
 class ModelLoader:
     def __init__(self,model_path):
-        self.model = model_path
-        self.input_details = None
-        self.output_details = None
-        self.interpreter = None
-
-    def load_model(self):
         self.interpreter = tflite.Interpreter(model_path=self.model)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
