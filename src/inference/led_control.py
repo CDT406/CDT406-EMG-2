@@ -38,7 +38,7 @@ class LedControl:
     def set_state(self, state=[0]):
         new_state = state.index(max(state))
         self.write_state(self.current_state, "0")
-        self.write_state(new_state, "0")
+        self.write_state(new_state, "1")
         self.current_state = new_state
 
 
