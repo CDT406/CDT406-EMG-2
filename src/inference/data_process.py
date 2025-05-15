@@ -39,7 +39,7 @@ class DataProcess:
             else:
                 return None
 
-        window = np.array(self.buffer).flatten()[self.config.read_window_size - self.step:]
+        window = np.array(self.buffer, dtype=np.float32).flatten()[self.config.read_window_size - self.step:]
         processed_window = self._process_window(window)
         return processed_window
 
