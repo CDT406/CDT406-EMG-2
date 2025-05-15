@@ -50,7 +50,7 @@ class DataProcess:
                 return None
             self.finalized_data.append(window)
 
-        f_data = np.array(self.finalized_data).flatten()
+        f_data = np.array(self.finalized_data, dtype=np.float32).flatten()
         self.finalized_data.popleft()  # Reset for next batch
         return f_data
 
