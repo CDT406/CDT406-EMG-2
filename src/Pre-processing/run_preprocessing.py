@@ -14,11 +14,14 @@ def run_preprocessing(
     low_cut,
     high_cut,
     filter_order,
-    wamp_threshold
+    wamp_threshold,
+    four_state=False
 ):
     os.makedirs(output_dir, exist_ok=True)
 
-    output_file = f"features_labels_W{window_size}_O{overlap}_WAMPth{int(wamp_threshold * 1000)}.pkl"
+    # Add state type to output filename
+    state_type = "4state" if four_state else "2state"
+    output_file = f"{state_type}_features_labels_W{window_size}_O{overlap}_WAMPth{int(wamp_threshold * 1000)}.pkl"
     output_path = os.path.join(output_dir, output_file)
 
     records = []
@@ -47,7 +50,8 @@ def run_preprocessing(
                     lowcut=low_cut,
                     highcut=high_cut,
                     order=filter_order,
-                    wamp_threshold=wamp_threshold
+                    wamp_threshold=wamp_threshold,
+                    four_state=four_state
                 )
             except Exception as e:
                 print(f"⚠️ Error processing {file_path}: {e}")
@@ -70,8 +74,23 @@ def run_preprocessing(
     if records:
         joblib.dump(records, output_path)
         print(f"\n✅ Saved {len(records)} windows to: {output_path}")
+        
+        # Print label distribution
+        labels = [r['label'] for r in records]
+        label_counts = Counter(labels)
+        if four_state:
+            print("\nLabel distribution (4-state):")
+            print("Rest:", label_counts.get(0, 0))
+            print("Grip:", label_counts.get(1, 0))
+            print("Hold:", label_counts.get(2, 0))
+            print("Release:", label_counts.get(3, 0))
+        else:
+            print("\nLabel distribution (2-state):")
+            print("Rest:", label_counts.get(0, 0))
+            print("Hold:", label_counts.get(1, 0))
+            
         cycle_counts = Counter((r['person_id'], r['cycle_id']) for r in records)
-        print("Cycle counts per person:", cycle_counts)
+        print("\nCycle counts per person:", cycle_counts)
     else:
         print("❌ No data processed.")
 
