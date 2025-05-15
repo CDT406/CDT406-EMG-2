@@ -35,11 +35,11 @@ class LedControl:
             self.leds.append(open(self.LED_path + str(i) + "/brightness", "w"))
 
 
-    def set_state(self, state):
-        val = "1" if state else "0"
+    def set_state(self, state=[0]):
+        new_state = state.index(max(state))
         self.write_state(self.current_state, "0")
-        self.write_state(state, "0")
-        self.current_state = state
+        self.write_state(new_state, "0")
+        self.current_state = new_state
 
 
     def write_state(self, led, val):
@@ -59,8 +59,8 @@ if __name__ == '__main__':
     led_c = PrintControl()
     
 
-    led_c.set_state(1)
+    led_c.set_state([1, 2, 0, 0])
     time.sleep(1)
-    led_c.set_state(2)
+    led_c.set_state([1, 2, 3, 0])
     time.sleep(1)
-    led_c.set_state(3)
+    led_c.set_state([1, 2, 0, 4])
