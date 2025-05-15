@@ -24,8 +24,7 @@ if __name__ == '__main__':
             break
         #print(window)
           
-        model.set_input_window(window)
-        output_state = model.get_output_state()
+        output_state = model.get_output_state(window)
         print(output_state)
-        #led_control.setState(output_state)
+        led_control.set_state(output_state)
         
