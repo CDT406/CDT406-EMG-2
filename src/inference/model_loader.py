@@ -3,7 +3,7 @@ import tflite_runtime.interpreter as tflite
 
 class ModelLoader:
     def __init__(self,model_path):
-        self.interpreter = tflite.Interpreter(model_path=self.model)
+        self.interpreter = tflite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
