@@ -15,4 +15,5 @@ class Config:
         self.read_window_size = 200
         self.frequency = 1000  # input frequency from semg
         self.model = "model.tflite"
+        self.file_path = 'src/inference/output.csv'
         self.features = ['mav', 'wl', 'wamp', 'mavs']

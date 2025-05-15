@@ -16,7 +16,7 @@ class DataProcess:
         self.step = round(config.read_window_size * config.window_overlap)
 
 
-    def _filter_window(self, window):
+    def _bandpass_filter(self, window):
         return bandpass_filter(
             signal=window,
             lowcut=self.config.low_cut,
@@ -45,4 +45,13 @@ class DataProcess:
 
 
     def _process_window(self, window):
-        return window  # TODO: Add processing
+        filtered_window = self._bandpass_filter(window)
+        
+        if (len(self.config.features) > 0):
+            return extract_features(
+                window=filtered_window,
+                features=self.config.features,
+                wamp_threshold=self.config.wamp_threshold
+            )
+        else:
+            return filtered_window 

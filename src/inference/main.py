@@ -9,7 +9,7 @@ if __name__ == '__main__':
     config = Config()
     led_control = LedControl()
     data_input = FileInput(
-        file_name='src/inference/output.csv',
+        file_name=config.file_path,
         frequency=config.frequency,
         window_size=config.read_window_size
         )
