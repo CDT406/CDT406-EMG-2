@@ -4,6 +4,7 @@ import threading
 import queue
 import numpy as np
 
+
 def open_sensor(analog_pin=0):
 	try:
 		file = open("/sys/bus/iio/devices/iio:device0/in_voltage{}_raw".format(analog_pin), mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True)
@@ -12,10 +13,12 @@ def open_sensor(analog_pin=0):
 		print("Sensor not found. Please check the analog pin.")
 		return None
 
+
 def read_value(file):
 	sensor_value = file.read()
 	file.seek(0)
 	return int(sensor_value)
+
 
 def pop_front(array, n=200):
     if len(array) < n:
@@ -24,7 +27,8 @@ def pop_front(array, n=200):
     array = array[n:]  # new view
     return front, array
 
-def read_sensor(queue, analog_pin, frequency=1000, window_size=200):
+
+def read_sensor(queue, analog_pin=0, frequency=1000, window_size=200):
 	window = []
 	while True:
 		file = open_sensor(analog_pin)
@@ -33,6 +37,7 @@ def read_sensor(queue, analog_pin, frequency=1000, window_size=200):
 			queue.put(window)
 			window = []
 		time.sleep(1.0 / frequency)
+
 
 class SensorInput:
 	def __init__(self, analog_pin=0, frequency=1000, window_size=200):
@@ -49,19 +54,33 @@ class SensorInput:
 		except queue.Empty:
 			return None
 
+
 class FileInput:
 	def __init__(self, file_name="output.csv", frequency=1000, window_size=200):
 		self.data = np.loadtxt(file_name, delimiter=",", dtype=np.int32)
+		self.window_size = window_size
 		
 	def has_next(self):
 		return self.data.shape[0] > 0
 
 	def next(self):
 		try:
-			window, self.data = pop_front(self.data, n=200)
+			window, self.data = pop_front(self.data, n=self.window_size)
 			return window
 		except queue.Empty:
 			return None
+
+
+def record_sensor_data(time =10, frequency=1000):
+	frequency = 1000
+	file = open_sensor()
+	array = np.array([], dtype=np.int32)
+	for i in range(time * frequency):
+		array = np.append(array, read_value(file))
+		print("Reading value: ", array)
+		time.sleep(1.0 / frequency)
+	np.savetxt("output.csv", array, delimiter=",", fmt="%d")
+
 
 if __name__ == "__main__":
 	f = FileInput()
@@ -72,14 +91,3 @@ if __name__ == "__main__":
 		else:
 			print("No more data.")
 		time.sleep(1.0 / 1000)
-
-def save_sensor_data():
-	seconds = 10
-	frequency = 1000
-	file = open_sensor()
-	array = np.array([], dtype=np.int32)
-	for i in range(seconds * frequency):
-		array = np.append(array, read_value(file))
-		print("Reading value: ", array)
-		time.sleep(1.0 / frequency)
-	np.savetxt("output.csv", array, delimiter=",", fmt="%d")
