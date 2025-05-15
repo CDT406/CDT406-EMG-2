@@ -13,6 +13,7 @@ class DataProcess:
         self.config = config
         self.data_input = data_input
         self.buffer = deque(maxlen=config.buffer_count)
+        self.finalized_data = deque(maxlen=config.windows_count)
         self.step = round(config.read_window_size * config.window_overlap)
 
 
@@ -25,8 +26,8 @@ class DataProcess:
             order=self.config.filter_order
         )
 
-
-    def get_next_window(self):
+    
+    def _get_next_window(self):
         if (len(self.buffer) == self.buffer.maxlen):
             self.buffer.popleft()
 
@@ -40,8 +41,18 @@ class DataProcess:
 
         window = np.array(self.buffer).flatten()[self.config.read_window_size - self.step:]
         processed_window = self._process_window(window)
-
         return processed_window
+
+    def get_next(self):
+        while len(self.finalized_data) < self.config.windows_count:
+            window = self._get_next_window()
+            if window is None:
+                return None
+            self.finalized_data.append(window)
+
+        f_data = np.array(self.finalized_data).flatten()
+        self.finalized_data.popleft()  # Reset for next batch
+        return f_data
 
 
     def _process_window(self, window):

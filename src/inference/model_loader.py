@@ -2,7 +2,6 @@ import tflite_runtime as tflite
 
 
 class ModelLoader:
-
     def __init__(self,model_path):
         self.model = model_path
         self.input_details = None

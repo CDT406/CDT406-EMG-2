@@ -19,7 +19,9 @@ if __name__ == '__main__':
     
     
     while 1:           
-        window = data_process.get_next_window()    
+        window = data_process.get_next()    
+        if window is None:
+            break
         print(window)
         # model.set_input_window(window)
         # output_state = model.get_output_state()
