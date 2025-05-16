@@ -4,11 +4,16 @@ from collections import Counter
 from filtering import bandpass_filter
 from feature_extraction import extract_features
 
-def get_majority_label(labels):
+def get_majority_label_2state(labels):
+    """Maps labels to binary classes: 0 for rest, 1 for any other state (grip/hold/release)"""
     mapped = [0 if l == 0 else 1 for l in labels]
     return Counter(mapped).most_common(1)[0][0]
 
-def process_file(file_path, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold):
+def get_majority_label_4state(labels):
+    """Maps labels to 4 states: 0=rest, 1=grip, 2=hold, 3=release"""
+    return Counter(labels).most_common(1)[0][0]
+
+def process_file(file_path, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold, four_state=False):
     # Read the CSV file
     df = pd.read_csv(file_path, header=None, names=['time', 'voltage', 'label'])
     
@@ -16,13 +21,13 @@ def process_file(file_path, window_size, overlap, fs, lowcut, highcut, order, wa
     signal = df['voltage'].values
     labels = df['label'].values
     
-    # Call the new process_data function to process the signal and labels
-    X, y = process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold)
+    # Call the process_data function with appropriate state configuration
+    X, y = process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold, four_state)
     
     # Return processed features (X) and labels (y)
     return X, y
 
-def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold, stop_event=None):
+def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold, four_state=False, stop_event=None):
     """
     Process data as it comes from the queue.
     
@@ -34,12 +39,12 @@ def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcu
     highcut: High cutoff frequency for bandpass filter.
     order: Order of the bandpass filter.
     wamp_threshold: Threshold for feature extraction.
+    four_state: If True, use 4-state classification (rest/grip/hold/release)
     stop_event: An optional event to stop processing (used for clean exit).
     
     Returns:
     Processed features (X) and labels (y) in each iteration.
     """
-    lock = Lock()  # Ensure thread-safety when accessing shared resources
     while True:
         try:
             # Wait for data to arrive in the queue
@@ -62,7 +67,7 @@ def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcu
                 if len(window) == window_size:
                     # Extract features for this window
                     features = extract_features(window, wamp_threshold=wamp_threshold)
-                    majority_label = get_majority_label(label_window)
+                    majority_label = get_majority_label_4state(label_window) if four_state else get_majority_label_2state(label_window)
                     X.append(np.array(features, dtype=np.float32))
                     y.append(majority_label)
 
@@ -82,7 +87,7 @@ def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcu
                 break
             continue
 
-def process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold):
+def process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold, four_state=False):
     # Apply bandpass filter to the signal
     signal = bandpass_filter(signal, lowcut, highcut, fs, order)
     
@@ -103,7 +108,7 @@ def process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, orde
         if len(window) == window_size:
             # Extract features from the window
             features = extract_features(window, wamp_threshold=wamp_threshold)
-            majority_label = get_majority_label(label_window)
+            majority_label = get_majority_label_4state(label_window) if four_state else get_majority_label_2state(label_window)
             X.append(np.array(features, dtype=np.float32))
             y.append(majority_label)
 

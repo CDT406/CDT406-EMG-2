@@ -4,9 +4,16 @@ from sequence_utils import split_by_person
 from trainer import train_and_evaluate
 from conversion import convert_keras_to_tflite
 
-def run_training(data_path, sequence_length, tflite_output_path, val_ids={1, 2}):
+def run_training(data_path, sequence_length, tflite_output_path, val_ids={1, 8}, num_classes=2):
     """
     Trains LSTM model using persons not in val_ids for training and val_ids for validation.
+    
+    Args:
+        data_path: Path to the preprocessed data file
+        sequence_length: Number of time steps in each sequence
+        tflite_output_path: Where to save the converted TFLite model
+        val_ids: Set of person IDs to use for validation
+        num_classes: Number of output classes (2 or 4)
     """
     records = joblib.load(data_path)
     X_train, y_train, X_val, y_val = split_by_person(records, sequence_length, val_ids)
@@ -15,9 +22,12 @@ def run_training(data_path, sequence_length, tflite_output_path, val_ids={1, 2})
         raise ValueError("❌ No valid training or validation data found.")
 
     input_shape = (sequence_length, X_train[0].shape[2])
-    model = build_lstm_model(input_shape)
+    model = build_lstm_model(input_shape, num_classes=num_classes)
 
-    accuracy, n_train, n_val = train_and_evaluate(model, X_train, y_train, X_val, y_val)
+    accuracy, n_train, n_val = train_and_evaluate(
+        model, X_train, y_train, X_val, y_val, 
+        num_classes=num_classes
+    )
 
     convert_keras_to_tflite(model, tflite_output_path)
     return accuracy, n_train, n_val
