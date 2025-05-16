@@ -226,7 +226,9 @@ def visualize_predictions(signal, true_labels, predictions, window_starts, windo
             print(f"True {label_names[true_state]}, Predicted {label_names[pred_state]}: {count}")
     
     plt.tight_layout()
-    plt.show()
+    # Save the plot instead of showing it
+    plt.savefig('emg_predictions.png')
+    plt.close()
 
 if __name__ == "__main__":
     # Configuration
