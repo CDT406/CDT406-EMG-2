@@ -2,7 +2,7 @@ from led_control import LedControl
 from analog_input import SensorInput, FileInput
 from data_process import DataProcess
 from config import Config
-from model_loader import Model
+from model_loader import get_model
 
 
 if __name__ == '__main__':
@@ -15,7 +15,7 @@ if __name__ == '__main__':
         )
     # data_input = SensorInput(frequency=config.frequency, window_size=config.window_size)
     data_process = DataProcess(config=config, data_input=data_input)
-    model = Model(config.model)
+    model = get_model(model_type=config.model_type, model_path=config.model)
     
     
     while 1:           

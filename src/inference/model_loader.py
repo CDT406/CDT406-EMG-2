@@ -1,6 +1,16 @@
 import tflite_runtime.interpreter as tflite
 
 
+def get_model(model_type, model_path):
+    match model_type:
+        case 'model':
+            return Model(model_path=model_path)
+        case 'RNNLTSM':
+            return RNNLTSM(model_path=model_path)
+        case _:
+            raise Exception("Error in config")
+
+
 class Model:
     def __init__(self, model_path):
         self.interpreter = tflite.Interpreter(model_path=model_path)
