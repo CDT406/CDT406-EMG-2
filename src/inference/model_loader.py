@@ -3,9 +3,9 @@ import tflite_runtime.interpreter as tflite
 
 def get_model(model_type, model_path):
     match model_type:
-        case 'model':
+        case 'default':
             return Model(model_path=model_path)
-        case 'RNNLTSM':
+        case 'Muppers':
             return RNNLTSM(model_path=model_path)
         case _:
             raise Exception("Error in config")
