@@ -18,13 +18,16 @@ class DataProcess:
 
 
     def _bandpass_filter(self, window):
-        return bandpass_filter(
+        filtered = bandpass_filter(
             signal=window,
             lowcut=self.config.low_cut,
             highcut=self.config.high_cut,
             fs=self.config.sampling_rate,
             order=self.config.filter_order
         )
+        # Normalize the filtered signal to zero mean and unit variance
+        normalized = (filtered - np.mean(filtered)) / (np.std(filtered) + 1e-8)
+        return normalized
 
     
     def _get_next_window(self):

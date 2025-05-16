@@ -21,7 +21,8 @@ class Config:
         self.read_window_size = 200
         self.frequency = 1000  # input frequency from semg
         self.model_type = 'model'
-        self.model = "model.tflite"
+        self.model = "output/SavedModels/RNN/WindowTest50%overlap/features_labels_W200_O100_WAMPth20_true_cycles_filtered.tflite"
         self.file_path = 'src/inference/output.csv'
         self.features = ['mav', 'wl', 'wamp', 'mavs']
-        self.normalization = Normalization.MeanStd
+        self.normalization = Normalization.No
+        self.normalization_params_path = "output/SavedModels/RNN/WindowTest50%overlap/normalization_params.json"

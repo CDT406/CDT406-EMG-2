@@ -1,16 +1,16 @@
-from beaglebone_processor import BeagleBoneProcessor
+from file_processor import FileProcessor
 from config import Config
-from led_control import LedControl
 import time
-import json
+import numpy as np
 
-def print_status(processor, last_prediction):
+def print_status(processor, last_prediction, predictions):
     """Print processor status and performance metrics"""
     status = processor.get_status()
     
     print("\033[2J\033[H")  # Clear screen and move to top
-    print("=== EMG Processing Status ===")
-    print(f"ADC Ready: {status['adc_ready']}")
+    print("=== File Processing Status ===")
+    print(f"Progress: {status['progress']}")
+    print(f"File Position: {status['file_position']}")
     print(f"Model Ready: {status['model_ready']}")
     print(f"Normalization Active: {status['normalization_active']}")
     print("\n=== Performance Metrics ===")
@@ -19,42 +19,52 @@ def print_status(processor, last_prediction):
     print(f"Avg Processing Time: {status['avg_processing_time_ms']:.2f} ms")
     print(f"Max Processing Time: {status['max_processing_time_ms']:.2f} ms")
     print(f"\nLast Prediction: {last_prediction}")
+    
+    if predictions:
+        # Count occurrences of each prediction
+        unique_preds, counts = np.unique(predictions, return_counts=True)
+        print("\n=== Prediction Statistics ===")
+        for pred, count in zip(unique_preds, counts):
+            print(f"Class {pred}: {count} ({(count/len(predictions))*100:.1f}%)")
 
 def main():
     # Initialize components
     config = Config()
-    led_control = LedControl()
+    
+    # Override sampling rate for 1kHz data
+    config.sampling_rate = 1000
     
     # Create processor instance
-    processor = BeagleBoneProcessor(
+    processor = FileProcessor(
         config=config,
         model_path=config.model,
-        analog_pin=0  # ADC pin number
+        file_path="src/inference/output.csv"
     )
     
     last_prediction = None
     last_status_time = time.time()
     status_interval = 1.0  # Update status every second
+    predictions = []  # Store all predictions
     
     try:
         # Start processing
         processor.start()
-        print("Started real-time processing. Press Ctrl+C to stop.")
+        print("Started file processing. Press Ctrl+C to stop.")
         
         # Main loop
-        while True:
+        while processor.running:
             # Get latest prediction
             prediction = processor.get_latest_prediction()
             
-            # Update LED if we have a new prediction
+            # Store prediction if we have one
             if prediction is not None:
                 last_prediction = prediction
-                led_control.set_state(prediction)
+                predictions.append(prediction)
             
             # Update status periodically
             current_time = time.time()
             if current_time - last_status_time >= status_interval:
-                print_status(processor, last_prediction)
+                print_status(processor, last_prediction, predictions)
                 last_status_time = current_time
             
             # Small sleep to prevent CPU spinning
@@ -63,10 +73,14 @@ def main():
     except KeyboardInterrupt:
         print("\nStopping...")
     finally:
-        # Cleanup
-        processor.cleanup()
-        led_control.cleanup()
+        # Final status update
+        print("\nProcessing Complete!")
+        print_status(processor, last_prediction, predictions)
+        
+        # Save predictions to file
+        if predictions:
+            np.savetxt('predictions.csv', predictions, fmt='%d')
+            print("\nPredictions saved to predictions.csv")
 
 if __name__ == "__main__":
-    main()
-        
+    main() 
