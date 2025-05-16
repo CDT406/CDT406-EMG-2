@@ -1,9 +1,9 @@
 from run_preprocessing import run_preprocessing
 
 # ----------- Constants -----------
-input_folder = r"datasets/official/unprocessed/relabeled_old_dataset"
-output_dir_2state = r"output/ProcessedData/WindowTest50%overlap/2state"
-output_dir_4state = r"output/ProcessedData/WindowTest50%overlap/4state"
+input_folder = "datasets/official/unprocessed/relabeled_old_dataset"
+output_dir_2state = r"output/ProcessedData/NormalizedData/2state"  # New directory for 2-state normalized data
+output_dir_4state = r"output/ProcessedData/NormalizedData/4state"  # New directory for 4-state normalized data
 sampling_rate = 5000
 low_cut = 20
 high_cut = 450

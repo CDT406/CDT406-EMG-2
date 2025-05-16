@@ -25,7 +25,7 @@ class DataProcess:
             fs=self.config.sampling_rate,
             order=self.config.filter_order
         )
-        # Normalize the filtered signal to zero mean and unit variance
+        # Normalize the filtered signal
         normalized = (filtered - np.mean(filtered)) / (np.std(filtered) + 1e-8)
         return normalized
 
@@ -38,16 +38,7 @@ class DataProcess:
         while (len(self.buffer) < self.config.buffer_count):
             if (self.data_input.has_next()):  # non-blocking, busy-wait
                 next_window = self.data_input.next()
-
-                #normalize the window
-                if self.config.normalization == Normalization.No:
-                    pass
-                elif self.config.normalization == Normalization.MinMax:
-                    next_window = (next_window - np.min(next_window)) / (np.max(next_window) - np.min(next_window))
-                elif self.config.normalization == Normalization.MeanStd:
-                    next_window = (next_window - np.mean(next_window)) / np.std(next_window)
-
-                self.buffer.append(next_window)  # TODO: Decide where to filter, here or in process_window?
+                self.buffer.append(next_window)
             else:
                 return None
 
@@ -76,9 +67,6 @@ class DataProcess:
                 features=self.config.features,
                 wamp_threshold=self.config.wamp_threshold
             )
-
-            #TODO How do we do normalization when the only have one of each feature?
-
             return features
         else:
             return filtered_window 

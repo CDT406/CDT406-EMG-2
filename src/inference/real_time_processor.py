@@ -4,6 +4,7 @@ import threading
 import time
 from scipy.signal import butter, sosfilt
 import queue
+from feature_normalization import normalize_features
 
 class RealTimeProcessor:
     def __init__(self, config):
@@ -29,10 +30,6 @@ class RealTimeProcessor:
         # Bandpass filter parameters
         self.sos = self._create_bandpass_filter(20, 450, self.sampling_rate)
         
-        # Feature normalization parameters (to be set during initialization)
-        self.feature_means = None
-        self.feature_stds = None
-        
         # Performance monitoring
         self.processing_times = deque(maxlen=100)  # Track last 100 processing times
         self.dropped_samples = 0
@@ -44,11 +41,6 @@ class RealTimeProcessor:
         self.processing_thread = None
         self.inference_thread = None
     
-    def set_normalization_params(self, means, stds):
-        """Set feature normalization parameters"""
-        self.feature_means = means
-        self.feature_stds = stds
-    
     def _create_bandpass_filter(self, lowcut, highcut, fs, order=4):
         """Create bandpass filter coefficients"""
         nyquist = fs / 2
@@ -57,9 +49,10 @@ class RealTimeProcessor:
         return butter(order, [low, high], btype='band', output='sos')
     
     def _filter_signal(self, signal):
-        """Apply bandpass filter to signal and normalize"""
+        """Apply bandpass filter and normalize signal"""
+        # Apply bandpass filter
         filtered = sosfilt(self.sos, signal)
-        # Normalize the filtered signal to zero mean and unit variance
+        # Normalize the filtered signal
         normalized = (filtered - np.mean(filtered)) / (np.std(filtered) + 1e-8)
         return normalized
     
@@ -82,9 +75,8 @@ class RealTimeProcessor:
         
         features = np.array([mav, wl, wamp, mavs], dtype=np.float32)
         
-        # Normalize features if parameters are available
-        if self.feature_means is not None and self.feature_stds is not None:
-            features = (features - self.feature_means) / self.feature_stds
+        # Normalize features using training data statistics
+        features = normalize_features(features)
         
         processing_time = time.perf_counter() - start_time
         self.processing_times.append(processing_time)
@@ -127,8 +119,10 @@ class RealTimeProcessor:
                         # Extract window
                         window = np.array(list(self.sample_buffer)[-self.window_size:])
                         
-                        # Filter and extract features
+                        # Filter and normalize the window
                         filtered_window = self._filter_signal(window)
+                        
+                        # Extract features
                         features = self._extract_features(filtered_window)
                         
                         # Add to feature queue

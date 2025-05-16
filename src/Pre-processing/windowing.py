@@ -53,6 +53,9 @@ def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcu
             # Bandpass filter the signal
             signal = bandpass_filter(signal, lowcut, highcut, fs, order)
             
+            # Normalize the entire signal before windowing
+            signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
+            
             # Calculate window step size
             step = window_size - overlap
             num_windows = (len(signal) - window_size) // step + 1
@@ -91,7 +94,7 @@ def process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, orde
     # Apply bandpass filter to the signal
     signal = bandpass_filter(signal, lowcut, highcut, fs, order)
     
-    # Normalize the filtered signal to zero mean and unit variance
+    # Normalize the entire signal before windowing
     signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
     
     # Calculate step size

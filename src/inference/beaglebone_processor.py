@@ -1,25 +1,12 @@
 from real_time_processor import RealTimeProcessor
 import numpy as np
 from tflite_runtime.interpreter import Interpreter
-import json
 
 class BeagleBoneProcessor(RealTimeProcessor):
     def __init__(self, config, model_path, analog_pin=0):
         super().__init__(config)
         self.analog_pin = analog_pin
         self.adc_file = None
-        
-        # Load normalization parameters if available
-        try:
-            with open(config.normalization_params_path, 'r') as f:
-                params = json.load(f)
-                self.set_normalization_params(
-                    np.array(params['means'], dtype=np.float32),
-                    np.array(params['stds'], dtype=np.float32)
-                )
-        except (FileNotFoundError, KeyError, json.JSONDecodeError) as e:
-            print(f"Warning: Could not load normalization parameters: {e}")
-            print("Features will not be normalized!")
         
         # Initialize TFLite model
         try:
@@ -88,7 +75,6 @@ class BeagleBoneProcessor(RealTimeProcessor):
         stats = self.get_performance_stats()
         return {
             **stats,
-            'normalization_active': self.feature_means is not None,
             'adc_ready': self.adc_file is not None,
             'model_ready': hasattr(self, 'interpreter')
         } 
