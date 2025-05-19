@@ -2,7 +2,7 @@ import tflite_runtime.interpreter as tflite
 
 
 def get_model(model_type, model_path):
-    if model_type == 'model':
+    if model_type == 'default':
         return Model(model_path=model_path)
     elif model_type == 'RNNLTSM':
         return RNNLTSM(model_path=model_path)
