@@ -3,21 +3,7 @@ import time
 import threading
 import queue
 import numpy as np
-
-
-def open_sensor(analog_pin=0):
-	try:
-		file = open("/sys/bus/iio/devices/iio:device0/in_voltage{}_raw".format(analog_pin), mode='r', buffering=-1, encoding=None, errors=None, newline=None, closefd=True)
-		return file
-	except FileNotFoundError:
-		print("Sensor not found. Please check the analog pin.")
-		return None
-
-
-def read_value(file):
-	sensor_value = file.read()
-	file.seek(0)
-	return int(sensor_value)
+import Adafruit_BBIO.ADC as ADC
 
 
 def pop_front(array, n=200):
@@ -25,22 +11,26 @@ def pop_front(array, n=200):
         raise ValueError("Not enough elements to pop.")
     front = array[:n]
     array = array[n:]  # new view
-    return front, array
+    return front, np.array(array, dtype=np.float32)
 
 
-def read_sensor(queue, analog_pin=0, frequency=1000, window_size=200):
-	window = []
+def read_sensor(queue, analog_pin="P9_33", frequency=1000, window_size=200):
+	assert(frequency == 1000, "Frequency must be 1000Hz dumb dumb code")
+
+	window = np.zeros(window_size, dtype=np.float32)
+	sleep = 0.0003273
+	ADC.setup()
+
 	while True:
-		file = open_sensor(analog_pin)
-		window.append(read_value(file))
-		if len(window) >= window_size:
-			queue.put(window)
-			window = []
-		time.sleep(1.0 / frequency)
+		for i in range(window_size):
+			window[i] = ADC.read(analog_pin) * 2.95 # max output from sparkfun hearbeat sensor
+			time.sleep(sleep)
+			
+		queue.put(window)
 
 
 class SensorInput:
-	def __init__(self, analog_pin=0, frequency=1000, window_size=200):
+	def __init__(self, analog_pin="P9_33", frequency=1000, window_size=200):
 		self.queue = queue.Queue()
 		self.analog_pin = analog_pin
 		threading.Thread(target=read_sensor, daemon=True, args=[self.queue, analog_pin, frequency, window_size]).start()
