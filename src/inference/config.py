@@ -20,7 +20,7 @@ class Config:
         self.window_overlap = 0.5  # 2 -> 50%
         self.read_window_size = 200
         self.frequency = 1000  # input frequency from semg
-        self.model_type = 'model'
+        self.model_type = 'default'
         self.model = "model.tflite"
         self.file_path = 'src/inference/output.csv'
         self.features = ['mav', 'wl', 'wamp', 'mavs']
