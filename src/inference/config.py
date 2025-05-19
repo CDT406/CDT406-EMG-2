@@ -21,7 +21,7 @@ class Config:
         self.read_window_size = 200
         self.frequency = 1000  # input frequency from semg
         self.model_type = 'default'
-        self.model = "model.tflite"
+        self.model = "2state_features_labels_W180_O90_WAMPth20.tflite"
         self.file_path = 'src/inference/output.csv'
         self.features = ['mav', 'wl', 'wamp', 'mavs']
         self.normalization = Normalization.MeanStd
