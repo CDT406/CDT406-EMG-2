@@ -28,12 +28,12 @@ class DataProcess:
 
     
     def _get_next_window(self):
-        if (len(self.buffer) == self.buffer.maxlen):
+        if len(self.buffer) == self.buffer.maxlen:
             self.buffer.popleft()
 
         # Need multiple windows due to window overlap
-        while (len(self.buffer) < self.config.buffer_count):
-            if (self.data_input.has_next()):  # non-blocking, busy-wait
+        while len(self.buffer) < self.config.buffer_count:
+            if self.data_input.has_next():  # non-blocking, busy-wait
                 next_window = self.data_input.next()
 
                 #normalize the window
@@ -45,7 +45,8 @@ class DataProcess:
                     next_window = (next_window - np.mean(next_window)) / np.std(next_window)
 
                 self.buffer.append(next_window)  # TODO: Decide where to filter, here or in process_window?
-            else:
+
+            if self.data_input.is_done():
                 return None
 
         window = np.array(self.buffer, dtype=np.float32).flatten()[self.config.read_window_size - self.step:]

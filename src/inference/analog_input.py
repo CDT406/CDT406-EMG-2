@@ -34,6 +34,9 @@ class SensorInput:
 		self.queue = queue.Queue()
 		self.analog_pin = analog_pin
 		threading.Thread(target=read_sensor, daemon=True, args=[self.queue, analog_pin, frequency, window_size]).start()
+
+	def is_done():
+		return False
 		
 	def has_next(self):
 		return not self.queue.empty()
@@ -49,6 +52,9 @@ class FileInput:
 	def __init__(self, file_name="output.csv", frequency=1000, window_size=200):
 		self.data = np.loadtxt(file_name, delimiter=",", dtype=np.int32)
 		self.window_size = window_size
+
+	def is_done(self):
+		return has_next(self) == 0
 		
 	def has_next(self):
 		return self.data.shape[0] > 0
