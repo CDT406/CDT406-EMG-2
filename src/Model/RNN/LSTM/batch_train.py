@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from run_train import run_training
 
 # ----------- Configuration -----------
-base_data_dir = "output/ProcessedData/NormalizedData"
-base_model_dir = "output/SavedModels/RNN/NormalizedData/WindowTest50%overlap"
+base_data_dir = "output/ProcessedData/NormalizedData1000Hz"
+base_model_dir = "output/SavedModels/RNN/NormalizedData1000Hz/WindowTest50%overlap"
 sequence_length = 3
 val_ids = {1, 8}  # ✅ Validate on persons 1 and 8
 

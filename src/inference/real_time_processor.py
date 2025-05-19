@@ -2,16 +2,16 @@ import numpy as np
 from collections import deque
 import threading
 import time
-from scipy.signal import butter, sosfilt
+from scipy.signal import butter, filtfilt
 import queue
-from feature_normalization import normalize_features
+from feature_extraction import extract_features
 
 class RealTimeProcessor:
     def __init__(self, config):
         # Sampling and window parameters
-        self.sampling_rate = 5000  # Hz
-        self.window_size = 224     # Samples
-        self.overlap = 112         # 50% overlap
+        self.sampling_rate = 1000  # Hz (reduced from 5000Hz to match BeagleBone capabilities)
+        self.window_size = 180     # Samples (180ms window at 1000Hz)
+        self.overlap = 90          # 50% overlap
         self.sequence_length = 3   # Number of windows for LSTM
         
         # Buffer sizes
@@ -28,7 +28,9 @@ class RealTimeProcessor:
         self.prediction_queue = queue.Queue()
         
         # Bandpass filter parameters
-        self.sos = self._create_bandpass_filter(20, 450, self.sampling_rate)
+        self.lowcut = 20
+        self.highcut = 450
+        self.filter_order = 4
         
         # Performance monitoring
         self.processing_times = deque(maxlen=100)  # Track last 100 processing times
@@ -41,47 +43,60 @@ class RealTimeProcessor:
         self.processing_thread = None
         self.inference_thread = None
     
-    def _create_bandpass_filter(self, lowcut, highcut, fs, order=4):
-        """Create bandpass filter coefficients"""
-        nyquist = fs / 2
-        low = lowcut / nyquist
-        high = highcut / nyquist
-        return butter(order, [low, high], btype='band', output='sos')
-    
     def _filter_signal(self, signal):
-        """Apply bandpass filter and normalize signal"""
-        # Apply bandpass filter
-        filtered = sosfilt(self.sos, signal)
-        # Normalize the filtered signal
-        normalized = (filtered - np.mean(filtered)) / (np.std(filtered) + 1e-8)
-        return normalized
+        """Apply bandpass filter using the same method as training"""
+        nyquist = 0.5 * self.sampling_rate
+        low = self.lowcut / nyquist
+        high = self.highcut / nyquist
+        b, a = butter(self.filter_order, [low, high], btype='band')
+        return filtfilt(b, a, signal)
     
-    def _extract_features(self, window):
-        """Extract features from a window of samples"""
-        start_time = time.perf_counter()
+    def _normalize_window(self, window):
+        """Normalize a window of samples"""
+        return (window - np.mean(window)) / (np.std(window) + 1e-8)
+    
+    def _processing_loop(self):
+        """Continuous signal processing loop"""
+        samples_since_last_window = 0
         
-        # Mean Absolute Value
-        mav = np.mean(np.abs(window))
-        
-        # Waveform Length
-        wl = np.sum(np.abs(np.diff(window)))
-        
-        # Willison Amplitude
-        wamp = np.sum(np.abs(np.diff(window)) > 0.02)
-        
-        # MAV Slope
-        half = len(window) // 2
-        mavs = np.abs(np.mean(np.abs(window[:half])) - np.mean(np.abs(window[half:])))
-        
-        features = np.array([mav, wl, wamp, mavs], dtype=np.float32)
-        
-        # Normalize features using training data statistics
-        features = normalize_features(features)
-        
-        processing_time = time.perf_counter() - start_time
-        self.processing_times.append(processing_time)
-        
-        return features
+        while self.running:
+            try:
+                # Process all available samples
+                while True:
+                    sample = self.sample_queue.get_nowait()
+                    self.sample_buffer.append(sample)
+                    samples_since_last_window += 1
+                    
+                    # Check if we have enough samples for a new window
+                    if samples_since_last_window >= self.overlap and len(self.sample_buffer) >= self.window_size:
+                        # Get the window
+                        window = np.array(list(self.sample_buffer)[-self.window_size:])
+                        
+                        # Apply bandpass filter
+                        filtered_window = self._filter_signal(window)
+                        
+                        # Normalize the window
+                        normalized_window = self._normalize_window(filtered_window)
+                        
+                        # Extract features using the same function as training
+                        features = extract_features(normalized_window, wamp_threshold=0.02)
+                        
+                        # Add to feature queue
+                        try:
+                            self.feature_queue.put_nowait(features)
+                        except queue.Full:
+                            # If feature queue is full, remove oldest feature
+                            try:
+                                self.feature_queue.get_nowait()
+                                self.feature_queue.put_nowait(features)
+                            except queue.Empty:
+                                pass
+                        
+                        samples_since_last_window = 0
+                        
+            except queue.Empty:
+                # No more samples to process, sleep briefly
+                time.sleep(0.0001)
     
     def _acquisition_loop(self):
         """Continuous data acquisition loop"""
@@ -101,46 +116,6 @@ class RealTimeProcessor:
                     self.dropped_samples += 1
                     # Skip this sample and adjust timing
                     last_time = current_time
-    
-    def _processing_loop(self):
-        """Continuous signal processing loop"""
-        samples_since_last_window = 0
-        
-        while self.running:
-            try:
-                # Process all available samples
-                while True:
-                    sample = self.sample_queue.get_nowait()
-                    self.sample_buffer.append(sample)
-                    samples_since_last_window += 1
-                    
-                    # Check if we have enough samples for a new window
-                    if samples_since_last_window >= self.overlap and len(self.sample_buffer) >= self.window_size:
-                        # Extract window
-                        window = np.array(list(self.sample_buffer)[-self.window_size:])
-                        
-                        # Filter and normalize the window
-                        filtered_window = self._filter_signal(window)
-                        
-                        # Extract features
-                        features = self._extract_features(filtered_window)
-                        
-                        # Add to feature queue
-                        try:
-                            self.feature_queue.put_nowait(features)
-                        except queue.Full:
-                            # If feature queue is full, remove oldest feature
-                            try:
-                                self.feature_queue.get_nowait()
-                                self.feature_queue.put_nowait(features)
-                            except queue.Empty:
-                                pass
-                        
-                        samples_since_last_window = 0
-                        
-            except queue.Empty:
-                # No more samples to process, sleep briefly
-                time.sleep(0.0001)
     
     def _inference_loop(self):
         """Separate thread for model inference"""

@@ -53,9 +53,6 @@ def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcu
             # Bandpass filter the signal
             signal = bandpass_filter(signal, lowcut, highcut, fs, order)
             
-            # Normalize the entire signal before windowing
-            signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
-            
             # Calculate window step size
             step = window_size - overlap
             num_windows = (len(signal) - window_size) // step + 1
@@ -68,6 +65,9 @@ def process_data_from_queue(data_queue, window_size, overlap, fs, lowcut, highcu
                 label_window = labels[start:end]
 
                 if len(window) == window_size:
+                    # Normalize the window
+                    window = (window - np.mean(window)) / (np.std(window) + 1e-8)
+                    
                     # Extract features for this window
                     features = extract_features(window, wamp_threshold=wamp_threshold)
                     majority_label = get_majority_label_4state(label_window) if four_state else get_majority_label_2state(label_window)
@@ -94,9 +94,6 @@ def process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, orde
     # Apply bandpass filter to the signal
     signal = bandpass_filter(signal, lowcut, highcut, fs, order)
     
-    # Normalize the entire signal before windowing
-    signal = (signal - np.mean(signal)) / (np.std(signal) + 1e-8)
-    
     # Calculate step size
     step = window_size - overlap
     num_windows = (len(signal) - window_size) // step + 1
@@ -109,6 +106,9 @@ def process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, orde
         label_window = labels[start:end]
 
         if len(window) == window_size:
+            # Normalize the window
+            window = (window - np.mean(window)) / (np.std(window) + 1e-8)
+            
             # Extract features from the window
             features = extract_features(window, wamp_threshold=wamp_threshold)
             majority_label = get_majority_label_4state(label_window) if four_state else get_majority_label_2state(label_window)

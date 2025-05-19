@@ -1,83 +1,152 @@
 from real_time_processor import RealTimeProcessor
 import numpy as np
-import time
+from scipy.signal import butter, filtfilt
+from tflite_runtime.interpreter import Interpreter
 
 class FileProcessor(RealTimeProcessor):
     def __init__(self, config, model_path, file_path):
         super().__init__(config)
+        self.lowcut = 20
+        self.highcut = 450
+        self.order = 4
+        self.wamp_threshold = 0.02
         self.file_path = file_path
         self.data = None
         self.current_index = 0
+        self.running = False
+        self.all_features = []  # Store all features for sequence creation
         
-        # Load the data
-        try:
-            self.data = np.loadtxt(file_path, delimiter=",", dtype=np.float32)
-            print(f"Loaded {len(self.data)} samples from {file_path}")
-        except Exception as e:
-            raise RuntimeError(f"Failed to load data from {file_path}: {e}")
-            
+        # Load and preprocess the entire file
+        self._load_and_preprocess_file()
+        
         # Initialize TFLite model
-        from tflite_runtime.interpreter import Interpreter
-        try:
-            self.interpreter = Interpreter(model_path=model_path)
-            self.interpreter.allocate_tensors()
-            self.input_details = self.interpreter.get_input_details()
-            self.output_details = self.interpreter.get_output_details()
-            
-            # Verify input shape matches our sequence configuration
-            expected_shape = (1, self.sequence_length, 4)  # batch_size, sequence_length, n_features
-            actual_shape = tuple(self.input_details[0]['shape'])
-            if actual_shape != expected_shape:
-                raise ValueError(f"Model input shape {actual_shape} does not match expected shape {expected_shape}")
-                
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize model: {e}")
+        self.interpreter = Interpreter(model_path=model_path)
+        self.interpreter.allocate_tensors()
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
     
-    def _read_adc(self):
-        """Read from file instead of ADC"""
-        if self.current_index >= len(self.data):
-            self.running = False  # Stop when we reach the end of file
+    def _load_and_preprocess_file(self):
+        """Load and preprocess the entire file"""
+        # Load signal (raw values only)
+        self.data = np.loadtxt(self.file_path, delimiter=",", dtype=np.float32)
+        
+        # Convert ADC values to voltage (assuming 12-bit ADC with 1.8V reference)
+        self.data = (self.data / 4095.0) * 1.8
+        
+        # Apply bandpass filter
+        self.data = self._bandpass_filter(self.data)
+        
+        print(f"Loaded {len(self.data)} samples from {self.file_path}")
+    
+    def _bandpass_filter(self, signal):
+        """Apply bandpass filter to signal"""
+        nyquist = 0.5 * self.sampling_rate
+        low = self.lowcut / nyquist
+        high = self.highcut / nyquist
+        b, a = butter(self.order, [low, high], btype='band')
+        return filtfilt(b, a, signal)
+    
+    def _normalize_window(self, window):
+        """Normalize window using mean and std"""
+        return (window - np.mean(window)) / (np.std(window) + 1e-8)
+    
+    def _extract_features(self, window):
+        """Extract features from window"""
+        features = []
+        features.append(self._compute_mav(window))
+        features.append(self._compute_wl(window))
+        features.append(self._compute_wamp(window))
+        features.append(self._compute_mavs(window))
+        return np.array(features, dtype=np.float32)
+    
+    def _compute_mav(self, window):
+        """Mean Absolute Value"""
+        return np.mean(np.abs(window))
+    
+    def _compute_wl(self, window):
+        """Waveform Length"""
+        return np.sum(np.abs(np.diff(window)))
+    
+    def _compute_wamp(self, window):
+        """Willison Amplitude"""
+        return np.sum(np.abs(np.diff(window)) > self.wamp_threshold)
+    
+    def _compute_mavs(self, window):
+        """MAV Slope"""
+        half = len(window) // 2
+        return np.abs(self._compute_mav(window[:half]) - self._compute_mav(window[half:]))
+    
+    def start(self):
+        """Start processing the file"""
+        self.running = True
+        self.current_index = 0
+        self.all_features = []
+    
+    def stop(self):
+        """Stop processing"""
+        self.running = False
+    
+    def get_latest_prediction(self):
+        """Get prediction for next window"""
+        if not self.running or self.current_index >= len(self.data):
             return None
+        
+        # Get window
+        end = min(self.current_index + self.window_size, len(self.data))
+        window = self.data[self.current_index:end]
+        
+        if len(window) < self.window_size:
+            self.running = False
+            return None
+        
+        # Normalize window
+        window = self._normalize_window(window)
+        
+        # Extract features
+        features = self._extract_features(window)
+        
+        # Add to all features
+        self.all_features.append(features)
+        
+        # Create sequence if we have enough features
+        if len(self.all_features) >= self.sequence_length:
+            # Create sequences by sliding over all features
+            X = []
+            for i in range(len(self.all_features) - self.sequence_length + 1):
+                X.append(self.all_features[i:i + self.sequence_length])
+            X = np.array(X, dtype=np.float32)
             
-        value = self.data[self.current_index]
-        # Convert ADC value to voltage (assuming 12-bit ADC with 1.8V reference)
-        voltage = (value / 4095.0) * 1.8
-        self.current_index += 1
-        return voltage
-    
-    def _make_prediction(self, sequence):
-        """Make prediction using TFLite model"""
-        try:
-            # Reshape sequence for model input (batch_size=1, sequence_length, features)
-            input_data = np.expand_dims(sequence, axis=0).astype(np.float32)
-            
-            # Debug output
-            print("\nFeature values for prediction:")
-            print("MAV, WL, WAMP, MAVS")
-            print(sequence[-1])  # Print features for the last window
+            # Get the last sequence
+            last_sequence = X[-1:]
             
             # Set input tensor
-            self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
+            self.interpreter.set_tensor(self.input_details[0]['index'], last_sequence)
             
             # Run inference
             self.interpreter.invoke()
             
             # Get prediction
-            output = self.interpreter.get_tensor(self.output_details[0]['index'])
-            raw_output = output[0]
-            print(f"Raw model output: {raw_output}")
-            return np.argmax(output[0])  # Return predicted class
+            pred = self.interpreter.get_tensor(self.output_details[0]['index'])
+            prediction = np.argmax(pred[0])
             
-        except Exception as e:
-            print(f"Warning: Prediction failed: {e}")
-            return None
+            # Update metrics
+            self.total_samples += 1
+            
+            # Move to next window
+            self.current_index += (self.window_size - self.overlap)
+            
+            return prediction
+        
+        # Move to next window even if we don't have enough features yet
+        self.current_index += (self.window_size - self.overlap)
+        return None
     
     def get_status(self):
         """Get processor status including performance stats"""
         stats = self.get_performance_stats()
         return {
             **stats,
-            'normalization_active': self.feature_means is not None,
+            'normalization_active': True,  # We normalize windows
             'file_position': f"{self.current_index}/{len(self.data)}",
             'progress': f"{(self.current_index/len(self.data))*100:.1f}%",
             'model_ready': hasattr(self, 'interpreter')

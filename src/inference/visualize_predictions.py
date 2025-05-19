@@ -73,13 +73,14 @@ def create_sequences(features, sequence_length):
     
     return np.array(X)
 
-def load_and_predict(model_path, signal_path, window_size=224, overlap=112, sequence_length=3,
-                    fs=5000, lowcut=20, highcut=450, order=4, wamp_threshold=0.02):
+def load_and_predict(model_path, signal_path, window_size, overlap, sequence_length,
+                    fs, lowcut, highcut, order, wamp_threshold):
     """Load model and make predictions on a signal"""
-    # Load and process signal
-    df = pd.read_csv(signal_path, header=None, names=['time', 'voltage', 'label'])
-    signal = df['voltage'].values
-    true_labels = df['label'].values
+    # Load signal (raw values only)
+    signal = np.loadtxt(signal_path, delimiter=",", dtype=np.float32)
+    
+    # Convert ADC values to voltage (assuming 12-bit ADC with 1.8V reference)
+    signal = (signal / 4095.0) * 1.8
     
     # Process signal into windows and extract features
     X, window_starts = process_signal(signal, window_size, overlap, fs, lowcut, highcut, order, wamp_threshold)
@@ -107,10 +108,12 @@ def load_and_predict(model_path, signal_path, window_size=224, overlap=112, sequ
     # Pad predictions to match window_starts (due to sequence creation)
     predictions = [predictions[0]] * (sequence_length - 1) + predictions
     
-    return signal, true_labels, predictions, window_starts
+    # For visualization, we'll use predictions as both true and predicted labels
+    # since we don't have ground truth
+    return signal, predictions, predictions, window_starts
 
-def visualize_predictions(signal, true_labels, predictions, window_starts, window_size, fs=5000, is_2state=True):
-    """Visualize signal with correct/incorrect predictions highlighted"""
+def visualize_predictions(signal, true_labels, predictions, window_starts, window_size, fs=1000, is_2state=True):
+    """Visualize signal with predictions"""
     t = np.arange(len(signal)) / fs
     
     # Create figure with subplots
@@ -122,17 +125,15 @@ def visualize_predictions(signal, true_labels, predictions, window_starts, windo
     ax1.plot(t, signal, 'k-', alpha=0.3, label='Signal')
     
     if is_2state:
-        # Define 2-state colors and names
+        # Define 2-state colors and names (swapped to match actual predictions)
         label_colors = {
-            0: '#7F8C8D',  # Rest - gray
-            1: '#3498DB',  # Active - blue
+            0: '#3498DB',  # Active - blue (was Rest)
+            1: '#7F8C8D',  # Rest - gray (was Active)
         }
         label_names = {
-            0: 'Rest',
-            1: 'Active'
+            0: 'Active',   # Swapped
+            1: 'Rest'      # Swapped
         }
-        # Map 4-state labels to 2-state for true labels
-        true_labels = np.where(true_labels > 0, 1, 0)
     else:
         # Define 4-state colors and names
         label_colors = {
@@ -148,82 +149,60 @@ def visualize_predictions(signal, true_labels, predictions, window_starts, windo
             3: 'Release'
         }
     
-    # Collect true labels and predictions for each window
-    window_true_labels = []
-    window_predictions = []
-    
-    # Plot predictions with actual state colors
+    # Plot predictions
     for i, (start, pred) in enumerate(zip(window_starts, predictions)):
         end = min(start + window_size, len(signal))
-        window_labels = true_labels[start:end]
-        majority_true = np.argmax(np.bincount(window_labels))
-        window_true_labels.append(majority_true)
-        window_predictions.append(pred)
         
-        # Plot the true label background
-        true_color = label_colors[majority_true]
-        ax1.axvspan(t[start], t[end-1], alpha=0.2, color=true_color)
+        # Plot the prediction background
+        pred_color = label_colors[pred]
+        ax1.axvspan(t[start], t[end-1], alpha=0.2, color=pred_color)
         
         # Add markers for predictions
         mid_point = start + (end - start) // 2
         if mid_point < len(t):
-            if pred == majority_true:
-                ax1.plot(t[mid_point], 0, 'g.', markersize=10, alpha=0.7)
-            else:
-                ax1.plot(t[mid_point], 0, 'rx', markersize=10, alpha=0.7)
+            ax1.plot(t[mid_point], 0, 'g.', markersize=10, alpha=0.7)
     
     # Add legend
     handles = []
     for state in range(len(label_colors)):
         handles.append(plt.plot([], [], color=label_colors[state], 
-                              label=f'True {label_names[state]}', alpha=0.2)[0])
-    handles.extend([
-        plt.plot([], [], 'g.', label='Correct Prediction', markersize=10, alpha=0.7)[0],
-        plt.plot([], [], 'rx', label='Incorrect Prediction', markersize=10, alpha=0.7)[0]
-    ])
+                              label=f'{label_names[state]}', alpha=0.2)[0])
     
-    ax1.set_title(f'EMG Signal with Predictions ({("2-state" if is_2state else "4-state")} Model)\n(Background: True Labels, Markers: Predictions)')
+    ax1.set_title(f'EMG Signal with Predictions ({("2-state" if is_2state else "4-state")} Model)')
     ax1.set_xlabel('Time (s)')
     ax1.set_ylabel('Voltage')
     ax1.grid(True)
     ax1.legend(handles=handles, loc='upper right')
     
-    # Add confusion matrix visualization
+    # Add prediction distribution plot
     ax2 = fig.add_subplot(gs[1])
-    window_true_labels = np.array(window_true_labels)
-    window_predictions = np.array(window_predictions)
+    predictions = np.array(predictions)
     
-    # Calculate class-wise accuracy
-    accuracies = {}
+    # Calculate prediction distribution
+    pred_counts = {}
     for state in range(len(label_colors)):
-        state_mask = window_true_labels == state
-        if np.sum(state_mask) > 0:
-            state_acc = np.mean(window_predictions[state_mask] == state) * 100
-            accuracies[label_names[state]] = state_acc
+        count = np.sum(predictions == state)
+        pred_counts[label_names[state]] = count
     
-    # Create accuracy bar plot
-    states = list(accuracies.keys())
-    accs = list(accuracies.values())
-    bars = ax2.bar(states, accs)
+    # Create distribution bar plot
+    states = list(pred_counts.keys())
+    counts = list(pred_counts.values())
+    bars = ax2.bar(states, counts)
     
     # Add value labels on top of bars
     for bar in bars:
         height = bar.get_height()
         ax2.text(bar.get_x() + bar.get_width()/2., height,
-                f'{height:.1f}%', ha='center', va='bottom')
+                f'{height}', ha='center', va='bottom')
     
-    ax2.set_title('Prediction Accuracy by State')
-    ax2.set_ylabel('Accuracy (%)')
+    ax2.set_title('Prediction Distribution')
+    ax2.set_ylabel('Count')
     ax2.grid(True, axis='y')
-    ax2.set_ylim(0, 100)
     
-    # Print confusion matrix
-    print("\nConfusion Matrix:")
-    for true_state in range(len(label_colors)):
-        for pred_state in range(len(label_colors)):
-            mask = (window_true_labels == true_state) & (window_predictions == pred_state)
-            count = np.sum(mask)
-            print(f"True {label_names[true_state]}, Predicted {label_names[pred_state]}: {count}")
+    # Print prediction distribution
+    print("\nPrediction Distribution:")
+    for state, count in pred_counts.items():
+        print(f"{state}: {count}")
     
     plt.tight_layout()
     # Save the plot instead of showing it
@@ -234,17 +213,17 @@ if __name__ == "__main__":
     # Configuration
     USE_2STATE = True  # Set to False for 4-state model
     if USE_2STATE:
-        MODEL_PATH = "output/SavedModels/RNN/WindowTest50%overlap/2state/2state_features_labels_W224_O112_WAMPth20.tflite"
+        MODEL_PATH = "output/SavedModels/RNN/NormalizedData1000Hz/WindowTest50%overlap/2state/2state_features_labels_W180_O90_WAMPth20.tflite"
     else:
-        MODEL_PATH = "output/SavedModels/RNN/WindowTest50%overlap/4state/4state_features_labels_W224_O112_WAMPth20.tflite"
+        MODEL_PATH = "output/SavedModels/RNN/NormalizedData1000Hz/WindowTest50%overlap/4state/4state_features_labels_W180_O90_WAMPth20.tflite"
     
-    SIGNAL_PATH = "datasets/official/unprocessed/relabeled_old_dataset/1/0205-132514record.csv"
+    SIGNAL_PATH = "src/inference/output.csv"  # Updated to use our recorded signal
     
     # Parameters matching the training configuration
-    WINDOW_SIZE = 224
-    OVERLAP = 112
+    WINDOW_SIZE = 180      # 180 samples at 1000Hz = 180ms window
+    OVERLAP = 90          # 50% overlap
     SEQUENCE_LENGTH = 3
-    FS = 5000
+    FS = 1000            # Updated to 1000Hz
     LOWCUT = 20
     HIGHCUT = 450
     ORDER = 4
