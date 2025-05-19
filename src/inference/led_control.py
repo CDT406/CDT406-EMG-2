@@ -24,7 +24,7 @@ class LedControl:
         if (not self.is_on_board):
             print("Not running on a Beaglebone")
             return
-            
+
         # Turn off triggers
         for i in range(self.LED_count):
             with open(self.LED_path + str(i) + "/trigger", "w") as f:
@@ -36,6 +36,9 @@ class LedControl:
 
 
     def set_state(self, state=[0]):
+        if (len(state) > self.LED_count):
+            raise Exception("Too large state given, 4 max.")
+
         new_state = state.index(max(state))
         self.write_state(self.current_state, "0")
         self.write_state(new_state, "1")
@@ -57,10 +60,12 @@ class LedControl:
 if __name__ == '__main__':
     # led_c = LedControl()
     led_c = PrintControl()
-    
+
 
     led_c.set_state([1, 2, 0, 0])
     time.sleep(1)
     led_c.set_state([1, 2, 3, 0])
     time.sleep(1)
     led_c.set_state([1, 2, 0, 4])
+    time.sleep(1)
+    led_c.set_state([1, 2, 0, 4, 5])
