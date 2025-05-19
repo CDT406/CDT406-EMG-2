@@ -11,7 +11,7 @@ class PrintControl:
     def set_state(self, state):
         if (len(state) > self.LED_count):
             raise Exception("Too large state given, 4 max.")
-        
+
         self.current_state = state
         print(f"Current state: {self.current_state}", end="\r", flush=True)
 
@@ -22,7 +22,7 @@ class LedControl:
         self.LED_path = '/sys/class/leds/beaglebone:green:usr'
         self.leds = []
         self.current_state = 0
-        self.is_on_board = os.path.exists(self.LED_path)
+        self.is_on_board = os.path.exists(self.LED_path + '0')
 
         if (not self.is_on_board):
             print("Not running on a Beaglebone")
@@ -42,10 +42,11 @@ class LedControl:
         if (len(state) > self.LED_count):
             raise Exception("Too large state given, 4 max.")
 
-        new_state = state.index(max(state))
-        self.write_state(self.current_state, "0")
-        self.write_state(new_state, "1")
+        new_state = state.tolist().index(max(state.tolist()))
+        #self.write_state(self.current_state, "0")
+        #self.write_state(new_state, "1")
         self.current_state = new_state
+
 
 
     def write_state(self, led, val):
