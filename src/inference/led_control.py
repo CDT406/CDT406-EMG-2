@@ -9,6 +9,9 @@ class PrintControl:
 
 
     def set_state(self, state):
+        if (len(state) > self.LED_count):
+            raise Exception("Too large state given, 4 max.")
+        
         self.current_state = state
         print(f"Current state: {self.current_state}", end="\r", flush=True)
 
