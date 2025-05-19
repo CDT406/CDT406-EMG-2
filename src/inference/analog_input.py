@@ -35,7 +35,7 @@ class SensorInput:
 		self.analog_pin = analog_pin
 		threading.Thread(target=read_sensor, daemon=True, args=[self.queue, analog_pin, frequency, window_size]).start()
 
-	def is_done():
+	def is_done(self):
 		return False
 		
 	def has_next(self):
