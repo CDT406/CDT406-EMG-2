@@ -4,7 +4,7 @@ import tflite_runtime.interpreter as tflite
 def get_model(model_type, model_path):
     if model_type == 'model':
         return Model(model_path=model_path)
-    elif model.type == 'RNNLTSM':
+    elif model_type == 'RNNLTSM':
         return RNNLTSM(model_path=model_path)
     else:
         raise Exception("Error in config")
