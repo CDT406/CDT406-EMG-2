@@ -24,3 +24,4 @@ class Config:
         self.file_path = 'src/inference/output.csv'
         self.features = ['mav', 'wl', 'wamp', 'mavs']
         self.normalization = Normalization.MeanStd
+        self.sqlite_path = f"output/{self.model_type}.db"
