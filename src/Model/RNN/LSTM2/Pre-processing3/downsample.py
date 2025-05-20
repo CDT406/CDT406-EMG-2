@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 
-def downsample_signal(signal_data, original_fs=5000, target_fs=1000):
+SAMPLING_RATE = 1000  # Target sampling rate in Hz
+
+def downsample_signal(signal_data, original_fs=5000, target_fs=SAMPLING_RATE):
     """
     Downsample the EMG signal from original_fs to target_fs.
     
@@ -24,7 +26,7 @@ def downsample_signal(signal_data, original_fs=5000, target_fs=1000):
     
     return downsampled_data
 
-def load_and_downsample(file_path, original_fs=5000, target_fs=1000):
+def load_and_downsample(file_path, original_fs=5000, target_fs=SAMPLING_RATE):
     """
     Load a CSV file and downsample the signal.
     
@@ -41,4 +43,4 @@ def load_and_downsample(file_path, original_fs=5000, target_fs=1000):
     data.columns = ['time', 'voltage', 'label']
     
     # Downsample
-    return downsample_signal(data, original_fs, target_fs) 
+    return downsample_signal(data, original_fs, target_fs)

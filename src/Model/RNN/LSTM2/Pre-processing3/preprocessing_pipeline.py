@@ -4,26 +4,120 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import json
+import sqlite3
+import inspect
 
-from downsample import load_and_downsample
-from windowing import create_windows
-from feature_extraction import extract_features
+from downsample import load_and_downsample, SAMPLING_RATE
+from windowing import create_windows, DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP
+from feature_extraction import (
+    extract_features, 
+    LOW_CUT, 
+    HIGH_CUT, 
+    FILTER_ORDER, 
+    WAMP_THRESHOLD
+)
 
-def convert_to_serializable(obj):
-    """
-    Convert NumPy types to Python native types for JSON serialization.
-    """
-    if isinstance(obj, np.integer):
-        return int(obj)
-    elif isinstance(obj, np.floating):
-        return float(obj)
-    elif isinstance(obj, np.ndarray):
-        return obj.tolist()
-    elif isinstance(obj, dict):
-        return {key: convert_to_serializable(value) for key, value in obj.items()}
-    elif isinstance(obj, list):
-        return [convert_to_serializable(item) for item in obj]
-    return obj
+def get_module_params():
+    """Collect parameters from all preprocessing modules"""
+    params = {
+        # From downsample.py
+        'sampling_rate': (SAMPLING_RATE, 'int'),
+        
+        # From windowing.py
+        'window_size': (DEFAULT_WINDOW_SIZE, 'int'),
+        'window_overlap': (DEFAULT_OVERLAP, 'float'),
+        'sequence_length': (3, 'int'),  # LSTM sequence length
+        'windows_count': (3, 'int'),
+        
+        # From feature_extraction.py
+        'low_cut': (LOW_CUT, 'int'),
+        'high_cut': (HIGH_CUT, 'int'),
+        'filter_order': (FILTER_ORDER, 'int'),
+        'wamp_threshold': (WAMP_THRESHOLD, 'float'),
+        
+        # Feature configuration
+        'features': (','.join(['MAV', 'WL', 'WAMP', 'MAVS']), 'list'),
+        'normalization': ('MeanStd', 'str'),
+    }
+    return params
+
+# Add this function after get_module_params() and before EMGPreprocessor class
+def normalize_features(features_dict):
+    """Normalize each feature type across all windows and all persons"""
+    # Initialize feature stats
+    feature_stats = {
+        'MAV': {'mean': None, 'std': None},
+        'WL': {'mean': None, 'std': None},
+        'WAMP': {'mean': None, 'std': None},
+        'MAVS': {'mean': None, 'std': None}
+    }
+    
+    # Collect all values for each feature type
+    feature_values = {feat: [] for feat in ['MAV', 'WL', 'WAMP', 'MAVS']}
+    
+    # Gather all values for each feature type
+    for person_id, cycles in features_dict.items():
+        for cycle_id, windows in cycles.items():
+            for window in windows:
+                feature_values['MAV'].append(window['MAV'])
+                feature_values['WL'].append(window['WL'])
+                feature_values['WAMP'].append(window['WAMP'])
+                feature_values['MAVS'].append(window['MAVS'])
+    
+    # Calculate stats and normalize
+    for feat_name in ['MAV', 'WL', 'WAMP', 'MAVS']:
+        values = np.array(feature_values[feat_name])
+        mean = np.mean(values)
+        std = np.std(values)
+        feature_stats[feat_name]['mean'] = float(mean)
+        feature_stats[feat_name]['std'] = float(std)
+        
+        # Normalize all values for this feature
+        for person_id, cycles in features_dict.items():
+            for cycle_id, windows in cycles.items():
+                for window in windows:
+                    window[feat_name] = (window[feat_name] - mean) / std
+    
+    return features_dict, feature_stats
+
+def save_feature_stats(stats, output_dir):
+    """Save feature statistics to SQLite database"""
+    db_path = os.path.join(output_dir, 'feature_stats.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Create table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS feature_stats (
+            feature_name TEXT PRIMARY KEY,
+            mean REAL,
+            std REAL
+        )
+    ''')
+    
+    # Insert stats
+    for feat_name, values in stats.items():
+        cursor.execute('''
+            INSERT OR REPLACE INTO feature_stats (feature_name, mean, std)
+            VALUES (?, ?, ?)
+        ''', (feat_name, values['mean'], values['std']))
+    
+    conn.commit()
+    conn.close()
+
+# Also add this helper function
+def convert_to_serializable(data):
+    """Convert numpy types to Python native types for JSON serialization"""
+    if isinstance(data, dict):
+        return {k: convert_to_serializable(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [convert_to_serializable(item) for item in data]
+    elif isinstance(data, np.integer):
+        return int(data)
+    elif isinstance(data, np.floating):
+        return float(data)
+    else:
+        return data
 
 class EMGPreprocessor:
     def __init__(self, data_dir, output_dir, window_size_ms=200, overlap_percentage=0.5):
@@ -112,9 +206,20 @@ class EMGPreprocessor:
             all_processed_data[person_id][cycle_counts[person_id]] = processed_data
             cycle_counts[person_id] += 1
         
+        print("\nNormalizing features...")
+        normalized_data, feature_stats = normalize_features(all_processed_data)
+        
+        print("Saving preprocessing configuration and feature statistics...")
+        params = get_module_params()
+        params.update({
+            'window_size': (self.window_size_ms, 'int'),
+            'window_overlap': (self.overlap_percentage, 'float'),
+        })
+        save_combined_config(self.output_dir, params, feature_stats)
+        
         print("\nConverting data to JSON format...")
-        # Convert data to JSON serializable format
-        serializable_data = convert_to_serializable(all_processed_data)
+        # Convert normalized data to JSON serializable format
+        serializable_data = convert_to_serializable(normalized_data)
         
         # Save the processed data
         output_file = os.path.join(self.output_dir, 'processed_data.json')
@@ -122,7 +227,7 @@ class EMGPreprocessor:
         with open(output_file, 'w') as f:
             json.dump(serializable_data, f, indent=2)
         
-        # Save metadata
+        # Update metadata to include normalization info
         metadata = {
             'window_size_ms': self.window_size_ms,
             'overlap_percentage': self.overlap_percentage,
@@ -130,7 +235,11 @@ class EMGPreprocessor:
             'num_persons': len(all_processed_data),
             'cycles_per_person': {str(person_id): len(cycles) 
                                 for person_id, cycles in all_processed_data.items()},
-            'features': ['MAV', 'WL', 'WAMP', 'MAVS']
+            'features': ['MAV', 'WL', 'WAMP', 'MAVS'],
+            'normalization': {
+                'type': 'feature-wise',
+                'config_location': 'preprocessing_config.db'  # Single database file
+            }
         }
         
         metadata_file = os.path.join(self.output_dir, 'metadata.json')
@@ -142,6 +251,80 @@ class EMGPreprocessor:
         print(f"Processed data for {len(all_processed_data)} persons")
         for person_id, cycles in all_processed_data.items():
             print(f"Person {person_id}: {len(cycles)} cycles")
+    
+    def save_preprocessing_config(self):
+        """Save all preprocessing parameters to SQLite"""
+        db_path = os.path.join(self.output_dir, 'preprocessing_config.db')
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS preprocessing_config (
+                parameter TEXT PRIMARY KEY,
+                value TEXT,
+                data_type TEXT
+            )
+        ''')
+        
+        # Get parameters from modules
+        params = get_module_params()
+        
+        # Override with instance-specific values
+        params.update({
+            'window_size': (self.window_size_ms, 'int'),
+            'window_overlap': (self.overlap_percentage, 'float'),
+        })
+        
+        # Save parameters
+        for param, (value, dtype) in params.items():
+            cursor.execute('''
+                INSERT OR REPLACE INTO preprocessing_config (parameter, value, data_type)
+                VALUES (?, ?, ?)
+            ''', (param, str(value), dtype))
+        
+        conn.commit()
+        conn.close()
+
+def save_combined_config(output_dir, preprocessing_params, feature_stats):
+    """Save all preprocessing parameters and feature statistics to a single SQLite database"""
+    db_path = os.path.join(output_dir, 'preprocessing_config.db')
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Create preprocessing config table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS preprocessing_config (
+            parameter TEXT PRIMARY KEY,
+            value TEXT,
+            data_type TEXT
+        )
+    ''')
+    
+    # Create feature stats table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS feature_stats (
+            feature_name TEXT PRIMARY KEY,
+            mean REAL,
+            std REAL
+        )
+    ''')
+    
+    # Save preprocessing parameters
+    for param, (value, dtype) in preprocessing_params.items():
+        cursor.execute('''
+            INSERT OR REPLACE INTO preprocessing_config (parameter, value, data_type)
+            VALUES (?, ?, ?)
+        ''', (param, str(value), dtype))
+    
+    # Save feature statistics
+    for feat_name, stats in feature_stats.items():
+        cursor.execute('''
+            INSERT OR REPLACE INTO feature_stats (feature_name, mean, std)
+            VALUES (?, ?, ?)
+        ''', (feat_name, stats['mean'], stats['std']))
+    
+    conn.commit()
+    conn.close()
 
 def main():
     # Define paths
@@ -155,8 +338,8 @@ def main():
         window_size_ms=200,  # 200ms windows
         overlap_percentage=0.5  # 50% overlap
     )
-    
-    preprocessor.process_all_files()
 
+
+    preprocessor.process_all_files()    
 if __name__ == '__main__':
-    main() 
+    main()

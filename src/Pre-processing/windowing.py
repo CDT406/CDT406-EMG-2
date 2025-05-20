@@ -109,3 +109,41 @@ def process_data(signal, labels, window_size, overlap, fs, lowcut, highcut, orde
     y = np.array(y)
     
     return X, y
+
+def normalize_features(features_dict):
+    """Normalize each feature type across all windows and all persons"""
+    # Initialize feature stats
+    feature_stats = {
+        'MAV': {'mean': None, 'std': None},
+        'WL': {'mean': None, 'std': None},
+        'WAMP': {'mean': None, 'std': None},
+        'MAVS': {'mean': None, 'std': None}
+    }
+    
+    # Collect all values for each feature type
+    feature_values = {feat: [] for feat in ['MAV', 'WL', 'WAMP', 'MAVS']}
+    
+    # Gather all values for each feature type
+    for person_id, cycles in features_dict.items():
+        for cycle_id, windows in cycles.items():
+            for window in windows:
+                feature_values['MAV'].append(window['MAV'])
+                feature_values['WL'].append(window['WL'])
+                feature_values['WAMP'].append(window['WAMP'])
+                feature_values['MAVS'].append(window['MAVS'])
+    
+    # Calculate stats and normalize
+    for feat_name in ['MAV', 'WL', 'WAMP', 'MAVS']:
+        values = np.array(feature_values[feat_name])
+        mean = np.mean(values)
+        std = np.std(values)
+        feature_stats[feat_name]['mean'] = float(mean)
+        feature_stats[feat_name]['std'] = float(std)
+        
+        # Normalize all values for this feature
+        for person_id, cycles in features_dict.items():
+            for cycle_id, windows in cycles.items():
+                for window in windows:
+                    window[feat_name] = (window[feat_name] - mean) / std
+    
+    return features_dict, feature_stats

@@ -1,5 +1,10 @@
 import numpy as np
 
+LOW_CUT = 20  # Low cutoff frequency in Hz
+HIGH_CUT = 450  # High cutoff frequency in Hz
+FILTER_ORDER = 4  # Butterworth filter order
+WAMP_THRESHOLD = 0.02  # Willison amplitude threshold
+
 def extract_features(window_data):
     """
     Extract features from an EMG window.
@@ -42,7 +47,7 @@ def calculate_wl(signal):
     """
     return np.sum(np.abs(np.diff(signal)))
 
-def calculate_wamp(signal, threshold=0.01):
+def calculate_wamp(signal, threshold=WAMP_THRESHOLD):
     """
     Calculate Wilson Amplitude (WAMP).
     
@@ -75,4 +80,4 @@ def calculate_mavs(signal):
         mavs.append(calculate_mav(segment))
     
     # Calculate the slope between consecutive MAV values
-    return np.mean(np.diff(mavs)) 
+    return np.mean(np.diff(mavs))

@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import tensorflow as tf
+import sqlite3
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
@@ -32,6 +33,39 @@ def create_sequences(data, sequence_length=3):
     
     return np.array(X), np.array(y)
 
+def normalize_features_by_type(X_train, X_val):
+    """Normalize each feature type using all values across windows"""
+    # Reshape arrays to separate windows and features
+    train_reshaped = X_train.reshape(-1, 3, 4)  # (samples, windows, features)
+    val_reshaped = X_val.reshape(-1, 3, 4)
+    
+    feature_stats = {
+        'MAV': {'mean': None, 'std': None},
+        'WL': {'mean': None, 'std': None},
+        'WAMP': {'mean': None, 'std': None},
+        'MAVS': {'mean': None, 'std': None}
+    }
+    
+    # Process each feature type
+    for feat_idx, feat_name in enumerate(['MAV', 'WL', 'WAMP', 'MAVS']):
+        # Get all values for this feature
+        train_feature = train_reshaped[:, :, feat_idx].ravel()
+        
+        # Calculate stats
+        mean = np.mean(train_feature)
+        std = np.std(train_feature)
+        feature_stats[feat_name]['mean'] = mean
+        feature_stats[feat_name]['std'] = std
+        
+        # Normalize both train and val using same stats
+        for window in range(3):
+            train_reshaped[:, window, feat_idx] = (train_reshaped[:, window, feat_idx] - mean) / std
+            val_reshaped[:, window, feat_idx] = (val_reshaped[:, window, feat_idx] - mean) / std
+    
+    return (train_reshaped.reshape(-1, 12), 
+            val_reshaped.reshape(-1, 12), 
+            feature_stats)
+
 def build_model(num_features=12, num_classes=4):
     """Build the LSTM model."""
     model = Sequential([
@@ -54,6 +88,32 @@ def build_model(num_features=12, num_classes=4):
     )
     
     return model
+
+def save_feature_stats_to_db(feature_stats, db_path):
+    """Save feature statistics to SQLite database."""
+    # Connect to SQLite database
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Create table if it doesn't exist
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS feature_stats (
+            feature TEXT PRIMARY KEY,
+            mean REAL,
+            std REAL
+        )
+    ''')
+    
+    # Insert or replace feature statistics
+    for feature, stats in feature_stats.items():
+        cursor.execute('''
+            INSERT OR REPLACE INTO feature_stats (feature, mean, std)
+            VALUES (?, ?, ?)
+        ''', (feature, stats['mean'], stats['std']))
+    
+    # Commit and close
+    conn.commit()
+    conn.close()
 
 def main():
     # Create directories if they don't exist
@@ -82,12 +142,7 @@ def main():
     X_train, y_train = create_sequences(train_data)
     X_val, y_val = create_sequences(val_data)
     
-    # Scale features
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_val = scaler.transform(X_val)
-    
-    # Build and train model
+    # Build and train model (no normalization needed)
     print("Building and training model...")
     model = build_model()
     
@@ -153,12 +208,6 @@ def main():
     # Save TFLite model
     with open(tflite_save_path, 'wb') as f:
         f.write(tflite_model)
-    
-    # Save scaler
-    print("Saving scaler...")
-    import pickle
-    with open(scaler_save_path, 'wb') as f:
-        pickle.dump(scaler, f)
     
     print("Done!")
 
