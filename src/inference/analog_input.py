@@ -14,8 +14,8 @@ def pop_front(array, n=200):
     return front, np.array(array, dtype=np.float32)
 
 
-def read_sensor(queue, analog_pin="P9_33", frequency=1000, window_size=200):
-	assert(frequency == 1000, "Frequency must be 1000Hz dumb dumb code")
+def read_sensor(queue, analog_pin="P9_33", sampling_rate=1000, window_size=200):
+	assert(sampling_rate == 1000, "Frequency must be 1000Hz dumb dumb code")
 
 	window = np.zeros(window_size, dtype=np.float32)
 	sleep = 0.0003273
@@ -30,10 +30,10 @@ def read_sensor(queue, analog_pin="P9_33", frequency=1000, window_size=200):
 
 
 class SensorInput:
-	def __init__(self, analog_pin="P9_33", frequency=1000, window_size=200):
+	def __init__(self, analog_pin="P9_33", sampling_rate=1000, window_size=200):
 		self.queue = queue.Queue()
 		self.analog_pin = analog_pin
-		threading.Thread(target=read_sensor, daemon=True, args=[self.queue, analog_pin, frequency, window_size]).start()
+		threading.Thread(target=read_sensor, daemon=True, args=[self.queue, analog_pin, sampling_rate, window_size]).start()
 
 	def is_done(self):
 		return False
@@ -49,7 +49,7 @@ class SensorInput:
 
 
 class FileInput:
-	def __init__(self, file_name="output.csv", frequency=1000, window_size=200):
+	def __init__(self, file_name="output.csv", sampling_rate=1000, window_size=200):
 		self.data = np.loadtxt(file_name, delimiter=",", dtype=np.int32)
 		self.window_size = window_size
 
@@ -67,14 +67,13 @@ class FileInput:
 			return None
 
 
-def record_sensor_data(time =10, frequency=1000):
-	frequency = 1000
+def record_sensor_data(time =10, sampling_rate=1000):
 	file = open_sensor()
 	array = np.array([], dtype=np.int32)
-	for i in range(time * frequency):
+	for i in range(time * sampling_rate):
 		array = np.append(array, read_value(file))
 		print("Reading value: ", array)
-		time.sleep(1.0 / frequency)
+		time.sleep(1.0 / sampling_rate)
 	np.savetxt("output.csv", array, delimiter=",", fmt="%d")
 
 

@@ -10,10 +10,10 @@ if __name__ == '__main__':
     led_control = LedControl()
     # data_input = FileInput(
     #     file_name=config.file_path,
-    #     frequency=config.frequency,
+    #     sampling_rate=config.sampling_rate,
     #     window_size=config.read_window_size
     #     )
-    data_input = SensorInput(frequency=config.frequency, window_size=config.read_window_size)
+    data_input = SensorInput(sampling_rate=config.sampling_rate, window_size=config.read_window_size)
     data_process = DataProcess(config=config, data_input=data_input)
     model = get_model(model_type=config.model_type, model_path=config.model)
 

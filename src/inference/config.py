@@ -8,7 +8,7 @@ class Normalization(Enum):
 class Config:
 
     def __init__(self):
-        self.sampling_rate = 1000
+        self.sampling_rate = 1000 # input frequency from semg
         self.low_cut = 20
         self.high_cut = 450
         self.filter_order = 4
@@ -19,7 +19,6 @@ class Config:
         self.windows_count = 3
         self.window_overlap = 0.5  # 2 -> 50%
         self.read_window_size = 200
-        self.frequency = 1000  # input frequency from semg
         self.model_type = 'default'
         self.model = "2state_features_labels_W180_O90_WAMPth20.tflite"
         self.file_path = 'src/inference/output.csv'
