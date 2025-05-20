@@ -1,0 +1,11 @@
+window_size,overlap,accuracy,train_samples,val_samples,model_path
+30,15,79.22192811965942,76908,22620,2state_features_labels_W30_O15_WAMPth20.tflite
+90,45,84.36750769615173,25534,7510,2state_features_labels_W90_O45_WAMPth20.tflite
+300,150,86.84684634208679,7548,2220,2state_features_labels_W300_O150_WAMPth20.tflite
+180,90,88.04289698600769,12682,3730,2state_features_labels_W180_O90_WAMPth20.tflite
+150,75,88.0178153514862,15266,4490,2state_features_labels_W150_O75_WAMPth20.tflite
+240,120,86.73835396766663,9486,2790,2state_features_labels_W240_O120_WAMPth20.tflite
+210,105,86.89655065536499,10846,3190,2state_features_labels_W210_O105_WAMPth20.tflite
+60,30,83.4986686706543,38386,11290,2state_features_labels_W60_O30_WAMPth20.tflite
+120,60,86.20996475219727,19108,5620,2state_features_labels_W120_O60_WAMPth20.tflite
+270,135,88.7854278087616,8398,2470,2state_features_labels_W270_O135_WAMPth20.tflite
