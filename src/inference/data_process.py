@@ -12,7 +12,7 @@ class DataProcess:
     def __init__(self, config, data_input, logger=None):
         self.config = config
         self.data_input = data_input
-        self.buffer = deque(maxlen=config.buffer_count)
+        self.buffer = deque(maxlen=config.buffer_len)
         self.finalized_data = deque(maxlen=config.windows_count)
         self.step = round(config.read_window_size * config.window_overlap)
         self.logger = logger

@@ -34,4 +34,4 @@ class Config:
         self.file_path = model['test_file_path']
         self.preprocessing_stats = data['preprocessing_config']
         self.log_path = model['log_file_path']
-
+        self.buffer_len = model['buffer_len']
