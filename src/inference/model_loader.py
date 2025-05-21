@@ -1,6 +1,6 @@
 #import tflite_runtime.interpreter as tflite
 import tensorflow as tf
-
+import time
 
 def get_model(model_type, model_path, logger=None):
     if model_type == 'default':
@@ -19,6 +19,7 @@ class Model:
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
         self.logger = logger
+        self.time = time.time()
         print("TFLite model loaded.")
 
     def _mupp_function(self):
@@ -32,7 +33,9 @@ class Model:
         output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
 
         if not self.logger == None:
-            self.logger(output_data)
+            #calculate elapsed time in seconds
+            elapsed_time = time.time() - self.time
+            self.logger(output_data, elapsed_time)
 
         return output_data
 
