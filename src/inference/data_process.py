@@ -62,9 +62,9 @@ class DataProcess:
 
     def _process_window(self, window):
         if (len(self.config.features) > 0):
+            breakpoint()
             window = self._bandpass_filter(window)
 
-            breakpoint()
             #normalize the window
             if self.config.normalization == Normalization.No:
                 pass
