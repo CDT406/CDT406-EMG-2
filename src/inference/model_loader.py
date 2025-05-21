@@ -1,4 +1,5 @@
-import tflite_runtime.interpreter as tflite
+#import tflite_runtime.interpreter as tflite
+import tensorflow as tf
 
 
 def get_model(model_type, model_path, logger=None):
@@ -12,11 +13,13 @@ def get_model(model_type, model_path, logger=None):
 
 class Model:
     def __init__(self, model_path, logger=None):
-        self.interpreter = tflite.Interpreter(model_path=model_path)
+        #self.interpreter = tflite.Interpreter(model_path=model_path)
+        self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
         self.logger = logger
+        print("TFLite model loaded.")
 
     def _mupp_function(self):
         pass

@@ -35,15 +35,6 @@ class DataProcess:
         while len(self.buffer) < self.config.buffer_count:
             if self.data_input.has_next():  # non-blocking, busy-wait
                 next_window = self.data_input.next()
-
-                #normalize the window
-                if self.config.normalization == Normalization.No:
-                    pass
-                elif self.config.normalization == Normalization.MinMax:
-                    next_window = (next_window - np.min(next_window)) / (np.max(next_window) - np.min(next_window))
-                elif self.config.normalization == Normalization.MeanStd:
-                    next_window = (next_window - np.mean(next_window)) / np.std(next_window)
-
                 self.buffer.append(next_window)  # TODO: Decide where to filter, here or in process_window?
 
             if self.data_input.is_done():
@@ -66,11 +57,19 @@ class DataProcess:
 
 
     def _process_window(self, window):
-        filtered_window = self._bandpass_filter(window)
-        
         if (len(self.config.features) > 0):
+            window = self._bandpass_filter(window)
+
+            #normalize the window
+            if self.config.normalization == Normalization.No:
+                pass
+            elif self.config.normalization == Normalization.MinMax:
+                window = (window - np.min(window)) / (np.max(window) - np.min(window))
+            elif self.config.normalization == Normalization.MeanStd:
+                window = (window - np.mean(window)) / np.std(window)
+
             features = extract_features(
-                window=filtered_window,
+                window=window,
                 features=self.config.features,
                 wamp_threshold=self.config.wamp_threshold
             )
@@ -79,4 +78,4 @@ class DataProcess:
 
             return features
         else:
-            return filtered_window 
+            return window 

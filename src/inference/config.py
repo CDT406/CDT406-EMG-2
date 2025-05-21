@@ -20,8 +20,8 @@ class Config:
         self.window_overlap = 0.5  # 2 -> 50%
         self.read_window_size = 200
         self.model_type = 'default'
-        self.model = "2state_features_labels_W180_O90_WAMPth20.tflite"
-        self.file_path = 'src/inference/output.csv'
+        self.model = "output/SavedModels/RNN/NormalizedData1000Hz/WindowTest50%overlap/2state/2state_features_labels_W180_O90_WAMPth20.tflite"
+        self.file_path = 'official/unprocessed/slow/2/0205-133530record.csv'
         self.features = ['mav', 'wl', 'wamp', 'mavs']
         self.normalization = Normalization.MeanStd
         self.sqlite_path = f"output/{self.model_type}.db"

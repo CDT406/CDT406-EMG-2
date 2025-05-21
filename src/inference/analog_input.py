@@ -3,7 +3,7 @@ import time
 import threading
 import queue
 import numpy as np
-import Adafruit_BBIO.ADC as ADC
+#import Adafruit_BBIO.ADC as ADC
 
 
 def pop_front(array, n=200):
@@ -27,26 +27,6 @@ def read_sensor(queue, analog_pin="P9_33", sampling_rate=1000, window_size=200):
 			time.sleep(sleep)
 			
 		queue.put(window)
-
-
-class SensorInput:
-	def __init__(self, analog_pin="P9_33", sampling_rate=1000, window_size=200):
-		self.queue = queue.Queue()
-		self.analog_pin = analog_pin
-		threading.Thread(target=read_sensor, daemon=True, args=[self.queue, analog_pin, sampling_rate, window_size]).start()
-
-	def is_done(self):
-		return False
-		
-	def has_next(self):
-		return not self.queue.empty()
-
-	def next(self):
-		try:
-			return self.queue.get_nowait()
-		except queue.Empty:
-			return None
-
 
 class FileInput:
 	def __init__(self, file_name="output.csv", sampling_rate=1000, window_size=200):
