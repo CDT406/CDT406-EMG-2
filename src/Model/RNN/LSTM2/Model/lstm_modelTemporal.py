@@ -106,14 +106,14 @@ def normalize_features_by_type(X_train, X_val):
 def build_model(num_features=12, num_classes=4, batch_size=32):
     """Build the LSTM model with stateful configuration."""
     model = Sequential([
-        tf.keras.layers.Input(batch_shape=(batch_size, 3, 4), name='input'),  # Fixed batch size needed for stateful
-        LSTM(64, 
+        tf.keras.layers.Input(batch_shape=(batch_size, 3, 4), name='input'),
+        LSTM(16,  # Reduced to 16 neurons
              return_sequences=False, 
-             stateful=True,  # Enable stateful LSTM
+             stateful=True,
              unroll=True,
              implementation=1,
              name='lstm'),
-        Dense(32, activation='relu', name='dense1'),
+        Dense(32, activation='tanh', name='dense1'),  # Changed to tanh activation
         Dense(num_classes, activation='softmax', name='output')
     ])
     
@@ -248,14 +248,18 @@ def main():
     predictions = predict_with_cycle_resets(model, X_val_reshaped, val_cycle_ends, batch_size)
     y_pred = np.argmax(predictions, axis=1)
     
+    # Calculate F1 scores
+    weighted_f1 = f1_score(y_val_trimmed, y_pred, average='weighted')
+    macro_f1 = f1_score(y_val_trimmed, y_pred, average='macro')
+    
     # Print classification report
     class_names = ['Rest', 'Grip', 'Hold', 'Release']
     print("\nClassification Report:")
     print(classification_report(y_val_trimmed, y_pred, target_names=class_names))
     
-    # Calculate and print weighted F1-score
-    weighted_f1 = f1_score(y_val_trimmed, y_pred, average='weighted')
-    print(f"\nWeighted F1-Score: {weighted_f1:.4f}")
+    # Print F1 scores
+    print(f"\nMacro F1-Score: {macro_f1:.4f}")
+    print(f"Weighted F1-Score: {weighted_f1:.4f}")
     
     # Create confusion matrix using trimmed validation data
     plt.figure(figsize=(8, 6))

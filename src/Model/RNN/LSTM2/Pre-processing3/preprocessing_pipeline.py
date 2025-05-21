@@ -119,6 +119,15 @@ def convert_to_serializable(data):
     else:
         return data
 
+def normalize_window(window_data):
+    """Normalize a single window of EMG data."""
+    data = window_data['voltage']
+    mean = np.mean(data)
+    std = np.std(data)
+    if std == 0:
+        return data  # Return unnormalized if std is 0
+    return (data - mean) / std
+
 class EMGPreprocessor:
     def __init__(self, data_dir, output_dir, window_size_ms=200, overlap_percentage=0.5):
         """
@@ -165,11 +174,16 @@ class EMGPreprocessor:
         )
         print(f"  - Created {len(windows)} windows")
         
-        # Extract features for each window
+        # Extract features for each normalized window
         processed_data = []
         for window_data, window_label in windows:
+            # Normalize window before feature extraction
+            normalized_window = normalize_window(window_data)
+            window_data['voltage'] = normalized_window
+            
+            # Extract features from normalized window
             features = extract_features(window_data['voltage'])
-            features['label'] = int(window_label)  # Convert label to Python int
+            features['label'] = int(window_label)
             processed_data.append(features)
         
         print(f"  - Extracted features for all windows")

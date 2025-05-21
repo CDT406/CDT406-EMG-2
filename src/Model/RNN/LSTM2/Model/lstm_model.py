@@ -3,7 +3,7 @@ import json
 import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import Sequential
@@ -37,14 +37,14 @@ def build_model(num_features=12, num_classes=4):
     model = Sequential([
         tf.keras.layers.Input(shape=(12,), name='input'),
         tf.keras.layers.Reshape((3, 4), name='reshape'),
-        LSTM(64, 
+        LSTM(16,  # Reduced to 16 neurons
              return_sequences=False, 
              stateful=False,
-             unroll=True,  # Added unroll parameter
+             unroll=True,
              implementation=1,
              name='lstm'),
-        Dense(32, activation='relu', name='dense1'),
-        Dense(num_classes, activation='softmax', name='output')
+        Dense(32, activation='tanh', name='dense1'),  # Changed activation to tanh
+        Dense(num_classes, activation='softmax', name='output')  # Output layer unchanged
     ])
     
     model.compile(
@@ -111,10 +111,18 @@ def main():
     # Get predictions
     y_pred = np.argmax(model.predict(X_val), axis=1)
     
+    # Calculate F1 scores
+    macro_f1 = f1_score(y_val, y_pred, average='macro')
+    weighted_f1 = f1_score(y_val, y_pred, average='weighted')
+    
     # Print classification report
     class_names = ['Rest', 'Grip', 'Hold', 'Release']
     print("\nClassification Report:")
     print(classification_report(y_val, y_pred, target_names=class_names))
+    
+    # Print F1 scores
+    print(f"\nMacro F1-Score: {macro_f1:.4f}")
+    print(f"Weighted F1-Score: {weighted_f1:.4f}")
     
     # Create confusion matrix plot with updated labels
     plt.figure(figsize=(8, 6))  # Adjusted size for 4x4 matrix
