@@ -47,6 +47,7 @@ class DataProcess:
         processed_window = self._process_window(window)
         return processed_window
 
+
     def get_next(self):
         while len(self.finalized_data) < self.config.windows_count:
             window = self._get_next_window()
@@ -80,7 +81,7 @@ class DataProcess:
             normalized_features = []
 
             for feature_name, feature in zip(self.config.features, features):
-                [mean, std] = self.config.preprocessing_stats[feature_name]
+                [mean, std] = self.config.feature_stats[feature_name]
                 normalized_feature = (feature - mean) / std
                 normalized_features.append(normalized_feature)
 
