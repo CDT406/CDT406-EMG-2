@@ -19,6 +19,7 @@ class Config:
         data = toml.load(toml_path)
         fstats = data['preprocessing_config']
         model = data['model']
+        self.window_normalization = data['window_normalization']
         self.sampling_rate = fstats['sampling_rate']
         self.read_window_size = fstats['window_size']
         self.window_overlap = fstats['window_overlap']
