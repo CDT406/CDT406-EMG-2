@@ -50,7 +50,7 @@ class FileInput:
 	def __init__(self, file_name="output.csv", sampling_rate=1000, window_size=200):
 		self.data = np.loadtxt(file_name, delimiter=",", dtype=np.float32)[:,1]
 		self.window_size = window_size
-
+		print(self.data[:200])
 	def is_done(self):
 		return self.has_next() == 0
 		

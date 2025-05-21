@@ -27,7 +27,7 @@ class DataProcess:
             order=self.config.filter_order
         )
 
-    
+
     def _get_next_window(self):
         if len(self.buffer) == self.buffer.maxlen:
             self.buffer.popleft()
@@ -47,6 +47,7 @@ class DataProcess:
         processed_window = self._process_window(window)
         return processed_window
 
+
     def get_next(self):
         while len(self.finalized_data) < self.config.windows_count:
             window = self._get_next_window()
@@ -56,12 +57,14 @@ class DataProcess:
 
         f_data = np.array(self.finalized_data, dtype=np.float32)
         self.finalized_data.popleft()  # Reset for next batch
-        return np.array([f_data])
+        return np.array([f_data.flatten()])
 
 
     def _process_window(self, window):
         if (len(self.config.features) > 0):
-            window = self._bandpass_filter(window)
+            window = np.array(window)
+           # window = np.array(self._bandpass_filter(window))
+           # breakpoint()
 
             #normalize the window
             if self.config.normalization == Normalization.No:
@@ -69,8 +72,10 @@ class DataProcess:
             elif self.config.normalization == Normalization.MinMax:
                 window = (window - np.min(window)) / (np.max(window) - np.min(window))
             elif self.config.normalization == Normalization.MeanStd:
-                window = (window - np.mean(window)) / np.std(window)
+                window = (window - self.config.window_normalization['global_mean']) / self.config.window_normalization['global_std']
 
+            #breakpoint()
+            window = np.array(self._bandpass_filter(window))
             features = extract_features(
                 window=window,
                 features=self.config.features,
@@ -80,10 +85,11 @@ class DataProcess:
             normalized_features = []
 
             for feature_name, feature in zip(self.config.features, features):
-                [mean, std] = self.config.preprocessing_stats[feature_name]
+                [mean, std] = self.config.feature_stats[feature_name]
                 normalized_feature = (feature - mean) / std
                 normalized_features.append(normalized_feature)
 
             return np.array(normalized_features, dtype=np.float32)
+            # return normalized_features
         else:
-            return window 
+            return window
