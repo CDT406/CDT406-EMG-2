@@ -43,6 +43,7 @@ class DataProcess:
             if self.data_input.is_done():
                 return None
 
+        breakpoint()
         window = np.array(self.buffer, dtype=np.float32).flatten()[self.config.read_window_size - self.step:]
         processed_window = self._process_window(window)
         return processed_window
@@ -62,7 +63,6 @@ class DataProcess:
 
     def _process_window(self, window):
         if (len(self.config.features) > 0):
-            breakpoint()
             window = self._bandpass_filter(window)
 
             #normalize the window
