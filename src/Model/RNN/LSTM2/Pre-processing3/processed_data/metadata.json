@@ -22,6 +22,6 @@
   ],
   "normalization": {
     "type": "feature-wise",
-    "config_location": "preprocessing_config.db"
+    "config_location": "preprocessing_config.toml"
   }
 }

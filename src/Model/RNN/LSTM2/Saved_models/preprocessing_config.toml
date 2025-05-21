@@ -1,0 +1,18 @@
+[feature_stats]
+MAV = [ 0.8066866458339044, 0.040805053707835215,]
+WL = [ 41.5996741726235, 8.948206045403865,]
+WAMP = [ 141.09533386967016, 47.76266695023781,]
+MAVS = [ -0.027291173976512352, 0.16356888922679744,]
+
+[preprocessing_config]
+sampling_rate = 1000
+window_size = 200
+window_overlap = 0.5
+sequence_length = 3
+windows_count = 3
+low_cut = 20
+high_cut = 450
+filter_order = 4
+wamp_threshold = 0.02
+features = [ "MAV", "WL", "WAMP", "MAVS",]
+normalization = "MeanStd"

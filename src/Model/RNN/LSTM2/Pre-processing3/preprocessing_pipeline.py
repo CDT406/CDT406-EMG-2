@@ -6,6 +6,7 @@ from pathlib import Path
 import json
 import sqlite3
 import inspect
+import toml
 
 from downsample import load_and_downsample, SAMPLING_RATE
 from windowing import create_windows, DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP
@@ -245,14 +246,14 @@ class EMGPreprocessor:
         metadata = {
             'window_size_ms': self.window_size_ms,
             'overlap_percentage': self.overlap_percentage,
-            'sampling_rate': 1000,  # After downsampling
+            'sampling_rate': 1000,
             'num_persons': len(all_processed_data),
             'cycles_per_person': {str(person_id): len(cycles) 
-                                for person_id, cycles in all_processed_data.items()},
+                                 for person_id, cycles in all_processed_data.items()},
             'features': ['MAV', 'WL', 'WAMP', 'MAVS'],
             'normalization': {
                 'type': 'feature-wise',
-                'config_location': 'preprocessing_config.db'  # Single database file
+                'config_location': 'preprocessing_config.toml'  # Updated to TOML
             }
         }
         
@@ -300,49 +301,39 @@ class EMGPreprocessor:
         conn.close()
 
 def save_combined_config(output_dir, preprocessing_params, feature_stats):
-    """Save all preprocessing parameters and feature statistics to SQLite database in Saved_models"""
+    """Save all preprocessing parameters and feature statistics to TOML file in Saved_models"""
     # Update save location to Saved_models
     save_dir = os.path.join('src', 'Model', 'RNN', 'LSTM2', 'Saved_models')
     os.makedirs(save_dir, exist_ok=True)
     
-    db_path = os.path.join(save_dir, 'preprocessing_config.db')
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    config = {
+        'feature_stats': {
+            'MAV': [float(feature_stats['MAV']['mean']), float(feature_stats['MAV']['std'])],
+            'WL': [float(feature_stats['WL']['mean']), float(feature_stats['WL']['std'])],
+            'WAMP': [float(feature_stats['WAMP']['mean']), float(feature_stats['WAMP']['std'])],
+            'MAVS': [float(feature_stats['MAVS']['mean']), float(feature_stats['MAVS']['std'])]
+        },
+        'preprocessing_config': {
+            'sampling_rate': preprocessing_params['sampling_rate'][0],
+            'window_size': preprocessing_params['window_size'][0],
+            'window_overlap': preprocessing_params['window_overlap'][0],
+            'sequence_length': preprocessing_params['sequence_length'][0],
+            'windows_count': preprocessing_params['windows_count'][0],
+            'low_cut': preprocessing_params['low_cut'][0],
+            'high_cut': preprocessing_params['high_cut'][0],
+            'filter_order': preprocessing_params['filter_order'][0],
+            'wamp_threshold': preprocessing_params['wamp_threshold'][0],
+            'features': preprocessing_params['features'][0].split(','),
+            'normalization': preprocessing_params['normalization'][0]
+        }
+    }
     
-    # Create preprocessing config table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS preprocessing_config (
-            parameter TEXT PRIMARY KEY,
-            value TEXT,
-            data_type TEXT
-        )
-    ''')
+    # Save to TOML file
+    toml_path = os.path.join(save_dir, 'preprocessing_config.toml')
+    with open(toml_path, 'w') as f:
+        toml.dump(config, f)
     
-    # Create feature stats table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS feature_stats (
-            feature_name TEXT PRIMARY KEY,
-            mean REAL,
-            std REAL
-        )
-    ''')
-    
-    # Save preprocessing parameters
-    for param, (value, dtype) in preprocessing_params.items():
-        cursor.execute('''
-            INSERT OR REPLACE INTO preprocessing_config (parameter, value, data_type)
-            VALUES (?, ?, ?)
-        ''', (param, str(value), dtype))
-    
-    # Save feature statistics
-    for feat_name, stats in feature_stats.items():
-        cursor.execute('''
-            INSERT OR REPLACE INTO feature_stats (feature_name, mean, std)
-            VALUES (?, ?, ?)
-        ''', (feat_name, stats['mean'], stats['std']))
-    
-    conn.commit()
-    conn.close()
+    print(f"Saved configuration to {toml_path}")
 
 def main():
     # Define paths
