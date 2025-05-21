@@ -42,6 +42,28 @@ def get_module_params():
     }
     return params
 
+def calculate_global_window_stats(data_dir):
+    """Calculate global mean and std across all EMG windows."""
+    all_values = []
+    file_pattern = os.path.join(data_dir, '**', '*.csv')
+    
+    print("Calculating global window statistics...")
+    for file_path in glob.glob(file_pattern, recursive=True):
+        # Load and downsample
+        downsampled_data = load_and_downsample(file_path)
+        # Get windows
+        windows = create_windows(downsampled_data, DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP)
+        # Collect all voltage values
+        for window_data, _ in windows:
+            all_values.extend(window_data['voltage'])
+    
+    # Calculate global stats
+    global_mean = np.mean(all_values)
+    global_std = np.std(all_values)
+    print(f"Global window stats - Mean: {global_mean:.4f}, Std: {global_std:.4f}")
+    
+    return global_mean, global_std
+
 # Add this function after get_module_params() and before EMGPreprocessor class
 def normalize_features(features_dict):
     """Normalize each feature type across all windows and all persons"""
@@ -120,14 +142,11 @@ def convert_to_serializable(data):
     else:
         return data
 
-def normalize_window(window_data):
-    """Normalize a single window of EMG data."""
-    data = window_data['voltage']
-    mean = np.mean(data)
-    std = np.std(data)
-    if std == 0:
-        return data  # Return unnormalized if std is 0
-    return (data - mean) / std
+def normalize_window(window_data, global_mean, global_std):
+    """Normalize window using global statistics."""
+    if global_std == 0:
+        return window_data['voltage']
+    return (window_data['voltage'] - global_mean) / global_std
 
 class EMGPreprocessor:
     def __init__(self, data_dir, output_dir, window_size_ms=200, overlap_percentage=0.5):
@@ -147,6 +166,9 @@ class EMGPreprocessor:
         
         # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
+        
+        # Calculate global stats once
+        self.global_mean, self.global_std = calculate_global_window_stats(data_dir)
     
     def process_file(self, file_path):
         """
@@ -175,11 +197,11 @@ class EMGPreprocessor:
         )
         print(f"  - Created {len(windows)} windows")
         
-        # Extract features for each normalized window
+        # Extract features using global normalization
         processed_data = []
         for window_data, window_label in windows:
-            # Normalize window before feature extraction
-            normalized_window = normalize_window(window_data)
+            # Normalize using global stats
+            normalized_window = normalize_window(window_data, self.global_mean, self.global_std)
             window_data['voltage'] = normalized_window
             
             # Extract features from normalized window
@@ -230,7 +252,7 @@ class EMGPreprocessor:
             'window_size': (self.window_size_ms, 'int'),
             'window_overlap': (self.overlap_percentage, 'float'),
         })
-        save_combined_config(self.output_dir, params, feature_stats)
+        save_combined_config(self.output_dir, params, feature_stats, (self.global_mean, self.global_std))
         
         print("\nConverting data to JSON format...")
         # Convert normalized data to JSON serializable format
@@ -300,13 +322,17 @@ class EMGPreprocessor:
         conn.commit()
         conn.close()
 
-def save_combined_config(output_dir, preprocessing_params, feature_stats):
-    """Save all preprocessing parameters and feature statistics to TOML file in Saved_models"""
+def save_combined_config(output_dir, preprocessing_params, feature_stats, global_window_stats):
+    """Save config including global window statistics."""
     # Update save location to Saved_models
     save_dir = os.path.join('src', 'Model', 'RNN', 'LSTM2', 'Saved_models')
     os.makedirs(save_dir, exist_ok=True)
     
     config = {
+        'window_normalization': {
+            'global_mean': float(global_window_stats[0]),
+            'global_std': float(global_window_stats[1])
+        },
         'feature_stats': {
             'MAV': [float(feature_stats['MAV']['mean']), float(feature_stats['MAV']['std'])],
             'WL': [float(feature_stats['WL']['mean']), float(feature_stats['WL']['std'])],
