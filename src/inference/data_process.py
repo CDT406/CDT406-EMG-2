@@ -63,7 +63,7 @@ class DataProcess:
 
     def _process_window(self, window):
         if (len(self.config.features) > 0):
-            window = self._bandpass_filter(window)
+            window = np.array(self._bandpass_filter(window))
 
             #normalize the window
             if self.config.normalization == Normalization.No:
@@ -87,5 +87,6 @@ class DataProcess:
                 normalized_features.append(normalized_feature)
 
             return np.array(normalized_features, dtype=np.float32)
+            # return normalized_features
         else:
             return window
