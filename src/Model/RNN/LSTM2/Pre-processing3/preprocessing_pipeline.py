@@ -286,8 +286,12 @@ class EMGPreprocessor:
         conn.close()
 
 def save_combined_config(output_dir, preprocessing_params, feature_stats):
-    """Save all preprocessing parameters and feature statistics to a single SQLite database"""
-    db_path = os.path.join(output_dir, 'preprocessing_config.db')
+    """Save all preprocessing parameters and feature statistics to SQLite database in Saved_models"""
+    # Update save location to Saved_models
+    save_dir = os.path.join('src', 'Model', 'RNN', 'LSTM2', 'Saved_models')
+    os.makedirs(save_dir, exist_ok=True)
+    
+    db_path = os.path.join(save_dir, 'preprocessing_config.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     

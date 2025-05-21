@@ -30,12 +30,17 @@ def load_combined_config(db_path):
     return config, feature_stats
 
 def main():
-    # Path to the single config database
-    base_dir = os.path.join('src', 'Model', 'RNN', 'LSTM2', 'Pre-processing3', 'processed_data')
+    # Update path to point to Saved_models directory
+    base_dir = os.path.join('src', 'Model', 'RNN', 'LSTM2', 'Saved_models')
     config_db = os.path.join(base_dir, 'preprocessing_config.db')
     
     # Print path for debugging
     print(f"Looking for config at: {os.path.abspath(config_db)}")
+    
+    # Check if directory exists
+    if not os.path.exists(base_dir):
+        print(f"Creating directory: {os.path.abspath(base_dir)}")
+        os.makedirs(base_dir, exist_ok=True)
     
     # Check if file exists
     if not os.path.exists(config_db):
