@@ -23,6 +23,6 @@ normalization = "MeanStd"
 
 [model]
 model_file_path = "output/SavedModels/RNN2/Saved_models/model.tflite"
-test_file_path = 'datasets/official/unprocessed/slow/2/0205-133530record.csv'
+test_file_path = 'datasets/official/unprocessed/relabeled_old_dataset/2/edited_0205-133839record_N.csv'
 log_file_path = 'output/Log/log.csv'
 buffer_len = 2
