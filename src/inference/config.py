@@ -30,7 +30,7 @@ class Config:
         self.wamp_threshold = fstats['wamp_threshold']
         self.features = fstats['features']
         self.normalization = str2enum(fstats['normalization'])
-        self.model = model['model_path']
+        self.model_path = model['model_file_path']
         self.file_path = model['test_file_path']
         self.preprocessing_stats = data['preprocessing_config']
         self.log_path = model['log_file_path']
