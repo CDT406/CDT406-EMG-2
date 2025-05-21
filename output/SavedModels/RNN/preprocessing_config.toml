@@ -20,4 +20,4 @@ normalization = "MeanStd"
 [model]
 model_path = "2state_features_labels_W180_O90_WAMPth20.tflite"
 test_file_path = 'src/inference/output.csv'
-log_file_path = 'output/log/log.csv'
+log_file_path = 'output/Log/log.csv'
