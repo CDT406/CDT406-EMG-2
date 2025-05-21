@@ -27,7 +27,7 @@ class DataProcess:
             order=self.config.filter_order
         )
 
-    
+
     def _get_next_window(self):
         if len(self.buffer) == self.buffer.maxlen:
             self.buffer.popleft()
@@ -70,7 +70,7 @@ class DataProcess:
             elif self.config.normalization == Normalization.MinMax:
                 window = (window - np.min(window)) / (np.max(window) - np.min(window))
             elif self.config.normalization == Normalization.MeanStd:
-                window = (window - np.mean(window)) / np.std(window)
+                window = (window - self.config.window_normalization['global_mean']) / self.config.window_normalization['global_std']
 
             features = extract_features(
                 window=window,
@@ -87,4 +87,4 @@ class DataProcess:
 
             return np.array(normalized_features, dtype=np.float32)
         else:
-            return window 
+            return window
