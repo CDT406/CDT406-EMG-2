@@ -23,11 +23,11 @@ class Model:
         self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
         self.interpreter.invoke()
         self._mupp_function()
-        output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
+        output_data = self.interpreter.get_tensor(self.output_details[0]['index'])[0]
 
-        if not self.logger is None:
+        if self.logger is not None:
             #calculate elapsed time in seconds
             elapsed_time = time.time() - self.time
-            self.logger(output_data, elapsed_time)
+            self.logger(output_data=output_data, time=elapsed_time)
 
         return output_data

@@ -18,16 +18,20 @@ class Logger:
 
     # Input data is a 1D numpy array of raw input data
     # Output data is a 1D numpy array of percentage values
-    def log_output_data(self, time, output_data): 
+    def log_output_data(self, output_data, time): 
         input_data = self.buffer
         self.buffer = []
-        #copy output len(input_data) times to output_data
-        output_data = np.tile(output_data, (len(input_data), 1))
-        time = np.tile(time, (len(input_data), 1))
-        print(input_data, output_data)
-        for i in zip(input_data, output_data):
-            time_str = ','.join(map(str, i[0]))
-            input_str = ','.join(map(str, i[0]))
-            output_str = ','.join(map(str, i[1]))
-            self.file.write(f"{time_str},{input_str},{output_str}\n")
+        breakpoint()
+        output_data = output_data.tolist()
+        output_state = [output_data.index(max(output_data))] * len(input_data)
+        output_data = [output_data] * len(input_data)
+        time = [time] * len(input_data)
+
+        breakpoint()
+        for t, i, s, o in zip(time, input_data, output_state, output_data):
+            time_str = ','.join(map(str, t))
+            input_str = ','.join(map(str, i))
+            output_state_str = ','.join(map(str, s))
+            output_str = ','.join(map(str, o))
+            self.file.write(f"{time_str},{input_str},{output_state_str},{output_str}\n")
         self.file.flush()
