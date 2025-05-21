@@ -32,12 +32,13 @@ def compute_mavs(window):
 def extract_features(window, features = ['mav', 'wl', 'wamp', 'mavs'], wamp_threshold=0.02):
     extracted_features = []
     for feature in features:
-        if feature == 'mav':
+        feature_lower_case = feature.lower()
+        if feature_lower_case == 'mav':
             extracted_features.append(compute_mav(window))
-        elif feature == 'wl':
+        elif feature_lower_case == 'wl':
             extracted_features.append(compute_wl(window))
-        elif feature == 'wamp':
+        elif feature_lower_case == 'wamp':
             extracted_features.append(compute_wamp(window, threshold=wamp_threshold))
-        elif feature == 'mavs':
+        elif feature_lower_case == 'mavs':
             extracted_features.append(compute_mavs(window))
     return extracted_features

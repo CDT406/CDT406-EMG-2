@@ -14,12 +14,13 @@ class Logger:
         print(f"Logger closed at {self.path}")
 
     def log_input_data(self, input_data):
-        self.buffer.append(input_data)
+        self.buffer.extend(input_data)
 
     # Input data is a 1D numpy array of raw input data
     # Output data is a 1D numpy array of percentage values
     def log_output_data(self, time, output_data):
-        input_data = input_data.flatten()
+        input_data = self.buffer
+        self.buffer = []
         #copy output len(input_data) times to output_data
         output_data = np.tile(output_data, (len(input_data), 1))
         time = np.tile(time, (len(input_data), 1))
