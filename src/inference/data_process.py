@@ -36,7 +36,7 @@ class DataProcess:
         while len(self.buffer) < self.config.buffer_len:
             if self.data_input.has_next():  # non-blocking, busy-wait
                 next_window = self.data_input.next()
-                if self.logger:
+                if self.logger is not None:
                     self.logger(next_window)
                 self.buffer.append(next_window)  # TODO: Decide where to filter, here or in process_window?
 
@@ -77,8 +77,13 @@ class DataProcess:
                 wamp_threshold=self.config.wamp_threshold
             )
 
-            #TODO How do we do normalization when the only have one of each feature?
+            normalized_features = []
 
-            return features
+            for feature_name, feature in zip(self.config.features, features):
+                [mean, std] = self.config.preprocessing_stats[feature_name]
+                normalized_feature = (feature - mean) / std
+                normalized_features.append(normalized_feature)
+
+            return np.array(normalized_features, dtype=np.float32)
         else:
             return window 

@@ -18,12 +18,13 @@ class Logger:
 
     # Input data is a 1D numpy array of raw input data
     # Output data is a 1D numpy array of percentage values
-    def log_output_data(self, time, output_data):
+    def log_output_data(self, time, output_data): 
         input_data = self.buffer
         self.buffer = []
         #copy output len(input_data) times to output_data
         output_data = np.tile(output_data, (len(input_data), 1))
         time = np.tile(time, (len(input_data), 1))
+        print(input_data, output_data)
         for i in zip(input_data, output_data):
             time_str = ','.join(map(str, i[0]))
             input_str = ','.join(map(str, i[0]))

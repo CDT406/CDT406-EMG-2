@@ -43,8 +43,8 @@ class LedControl:
             raise Exception("Too large state given, 4 max.")
 
         new_state = state.tolist().index(max(state.tolist()))
-        #self.write_state(self.current_state, "0")
-        #self.write_state(new_state, "1")
+        self.write_state(self.current_state, "0")
+        self.write_state(new_state, "1")
         self.current_state = new_state
 
 

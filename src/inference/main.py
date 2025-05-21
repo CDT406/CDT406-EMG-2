@@ -27,8 +27,6 @@ if __name__ == '__main__':
     data_input = get_data_input('File')
     data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input_data)
     model = Model(model_path=config.model_path, logger=logger.log_output_data)
-    data_process = DataProcess(config=config, data_input=data_input)
-
 
     while 1:
         window = data_process.get_next()
