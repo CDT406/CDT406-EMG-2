@@ -17,8 +17,8 @@ if __name__ == '__main__':
         window_size=config.read_window_size
         )
     #data_input = SensorInput(sampling_rate=config.sampling_rate, window_size=config.read_window_size)
-    data_process = DataProcess(config=config, data_input=data_input)
-    model = get_model(model_type=config.model_type, model_path=config.model, logger=logger.log_data)
+    data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input)
+    model = get_model(model_type=config.model_type, model_path=config.model, logger=logger.log_output)
 
 
     while 1:

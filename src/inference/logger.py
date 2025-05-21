@@ -1,29 +1,29 @@
-import sqlite3
-
+import numpy as np
 
 class Logger:
     
-    def __init__(self, path='output/sqlite.db'):
-        self.con = sqlite3.connect(path)
-        self.cursor = self.con.cursor()
-
+    def __init__(self, path='output/output.csv'):
+        self.path = path
+        self.file = open(self.path, 'w')
+        self.file.write("input_data,output_data\n")
+        self.buffer = []
+        print(f"Logger initialized at {self.path}")
 
     def __del__(self):
-        self.con.close()
+        self.file.close()
+        print(f"Logger closed at {self.path}")
 
+    def log_input_data(self, input_data):
+        self.buffer.append(input_data)
 
-    def log_data(self, input_data, output_data):
-        # Create table if it doesn't exist
-        self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                input_data TEXT,
-                output_data TEXT
-            )
-        ''')
-        # Insert the input and output data as text
-        self.cursor.execute(
-            'INSERT INTO logs (input_data, output_data) VALUES (?, ?)',
-            (str(input_data), str(output_data))
-        )
-        self.con.commit()
+    # Input data is a 1D numpy array of raw input data
+    # Output data is a 1D numpy array of percentage values
+    def log_output_data(self, output_data):
+        input_data = input_data.flatten()
+        #copy output len(input_data) times to output_data
+        output_data = np.tile(output_data, (len(input_data), 1))
+        for i in zip(input_data, output_data):
+            input_str = ','.join(map(str, i[0]))
+            output_str = ','.join(map(str, i[1]))
+            self.file.write(f"{input_str},{output_str}\n")
+        self.file.flush()

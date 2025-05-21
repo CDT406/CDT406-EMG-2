@@ -32,7 +32,7 @@ class Model:
         output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
 
         if not self.logger == None:
-            self.logger(input_data, output_data)
+            self.logger(output_data)
 
         return output_data
 

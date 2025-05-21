@@ -9,12 +9,13 @@ from config import Normalization
 
 class DataProcess:
 
-    def __init__(self, config, data_input):
+    def __init__(self, config, data_input, logger=None):
         self.config = config
         self.data_input = data_input
         self.buffer = deque(maxlen=config.buffer_count)
         self.finalized_data = deque(maxlen=config.windows_count)
         self.step = round(config.read_window_size * config.window_overlap)
+        self.logger = logger
 
 
     def _bandpass_filter(self, window):
@@ -35,6 +36,8 @@ class DataProcess:
         while len(self.buffer) < self.config.buffer_count:
             if self.data_input.has_next():  # non-blocking, busy-wait
                 next_window = self.data_input.next()
+                if self.logger:
+                    self.logger(next_window)
                 self.buffer.append(next_window)  # TODO: Decide where to filter, here or in process_window?
 
             if self.data_input.is_done():
