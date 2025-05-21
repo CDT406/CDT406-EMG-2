@@ -43,7 +43,6 @@ class DataProcess:
             if self.data_input.is_done():
                 return None
 
-        breakpoint()
         window = np.array(self.buffer, dtype=np.float32).flatten()[self.config.read_window_size - self.step:]
         processed_window = self._process_window(window)
         return processed_window
