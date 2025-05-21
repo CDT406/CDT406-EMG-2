@@ -1,8 +1,12 @@
+[window_normalization]
+global_mean = 1.6419188287181485
+global_std = 0.11252158772846206
+
 [feature_stats]
-MAV = [ 0.8066866458339044, 0.040805053707835215,]
-WL = [ 41.5996741726235, 8.948206045403865,]
-WAMP = [ 141.09533386967016, 47.76266695023781,]
-MAVS = [ -0.027291173976512352, 0.16356888922679744,]
+MAV = [ 0.5290656415112962, 0.6015628121511317,]
+WL = [ 24.048595703063157, 31.310377669408656,]
+WAMP = [ 142.14930276213462, 48.75853818330601,]
+MAVS = [ -5.970701992638479e-5, 0.17692540561836567,]
 
 [preprocessing_config]
 sampling_rate = 1000
@@ -16,9 +20,3 @@ filter_order = 4
 wamp_threshold = 0.02
 features = [ "MAV", "WL", "WAMP", "MAVS",]
 normalization = "MeanStd"
-
-[model]
-model_file_path = "output/SavedModels/RNN2/Saved_models/model.tflite"
-test_file_path = 'datasets/official/unprocessed/slow/2/0205-133530record.csv'
-log_file_path = 'output/Log/log.csv'
-buffer_len = 2
