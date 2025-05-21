@@ -33,7 +33,7 @@ class DataProcess:
             self.buffer.popleft()
 
         # Need multiple windows due to window overlap
-        while len(self.buffer) < self.config.buffer_count:
+        while len(self.buffer) < self.config.buffer_len:
             if self.data_input.has_next():  # non-blocking, busy-wait
                 next_window = self.data_input.next()
                 if self.logger:
