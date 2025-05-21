@@ -49,7 +49,6 @@ class SensorInput:
 class FileInput:
 	def __init__(self, file_name="output.csv", sampling_rate=1000, window_size=200):
 		self.data = np.loadtxt(file_name, delimiter=",", dtype=np.float32)[:,1]
-		breakpoint()
 		self.window_size = window_size
 
 	def is_done(self):
