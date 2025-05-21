@@ -52,7 +52,7 @@ class FileInput:
 		self.window_size = window_size
 
 	def is_done(self):
-		return has_next(self) == 0
+		return self.has_next() == 0
 		
 	def has_next(self):
 		return self.data.shape[0] > 0
