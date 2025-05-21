@@ -1,0 +1,23 @@
+[preprocessing_config]
+MAV = [1.6419188866251029, 0.030798150117324022]
+WL = [2.705986171148536, 3.5230934077396454]
+WAMP = [38.890654330919816, 54.96347714502968]
+MAVS = [-0.000005479490915414868, 0.01637174119363945]
+
+[feature_stats]
+sampling_rate = 1000
+window_size = 200
+window_overlap = 0.5
+sequence_length = 3
+windows_count = 3
+low_cut = 20
+high_cut = 450
+filter_order = 4
+wamp_threshold = 0.02
+features = ["MAV", "WL", "WAMP", "MAVS"]
+normalization = "MeanStd"
+
+[model]
+model_path = "2state_features_labels_W180_O90_WAMPth20.tflite"
+test_file_path = 'src/inference/output.csv'
+log_file_path = 'output/log/log.csv'

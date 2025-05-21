@@ -1,24 +1,33 @@
 from led_control import LedControl
-from analog_input import FileInput
+from analog_input import FileInput, SensorInput
 from data_process import DataProcess
 from logger import Logger
 from config import Config
-from model_loader import get_model
+from model_loader import Model
 import numpy as np
 
 
+def get_data_input(type='File'):
+    if type == 'File':
+        return FileInput(
+                file_name=config.file_path,
+                sampling_rate=config.sampling_rate,
+                window_size=config.read_window_size
+            )
+    elif type == 'Sensor':
+        return SensorInput(sampling_rate=config.sampling_rate, window_size=config.read_window_size)
+    else:
+        raise Exception("Wrong input type")
+
+
 if __name__ == '__main__':
-    config = Config()
-    logger = Logger(config.sqlite_path)
+    config = Config('output/SavedModels/RNN/preprocessing_config.toml')
+    logger = Logger(config.log_path)
     led_control = LedControl()
-    data_input = FileInput(
-        file_name=config.file_path,
-        sampling_rate=config.sampling_rate,
-        window_size=config.read_window_size
-        )
-    #data_input = SensorInput(sampling_rate=config.sampling_rate, window_size=config.read_window_size)
-    data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input)
-    model = get_model(model_type=config.model_type, model_path=config.model, logger=logger.log_output)
+    data_input = get_data_input('File')
+    data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input_data)
+    model = Model(model_path=config.file_path, logger=logger.log_output_data)
+    data_process = DataProcess(config=config, data_input=data_input)
 
 
     while 1:
