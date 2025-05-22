@@ -15,14 +15,10 @@ class Model:
         self.time = time.time()
         print("TFLite model loaded.")
 
-    def _mupp_function(self):
-        pass
-
 
     def get_output_state(self, input_data):
         self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
         self.interpreter.invoke()
-        self._mupp_function()
         output_data = self.interpreter.get_tensor(self.output_details[0]['index'])[0]
 
         if self.logger is not None:
