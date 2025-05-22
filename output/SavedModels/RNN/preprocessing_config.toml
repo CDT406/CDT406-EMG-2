@@ -1,10 +1,10 @@
-[preprocessing_config]
+[feature_stats] 
 MAV = [1.6419188866251029, 0.030798150117324022]
 WL = [2.705986171148536, 3.5230934077396454]
 WAMP = [38.890654330919816, 54.96347714502968]
 MAVS = [-0.000005479490915414868, 0.01637174119363945]
 
-[feature_stats]
+[preprocessing_config]
 sampling_rate = 1000
 window_size = 200
 window_overlap = 0.5

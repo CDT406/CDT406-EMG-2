@@ -25,7 +25,7 @@ def read_sensor(queue, analog_pin="P9_33", sampling_rate=1000, window_size=200):
 		for i in range(window_size):
 			window[i] = ADC.read(analog_pin) * 2.95 # max output from sparkfun hearbeat sensor
 			time.sleep(sleep)
-			
+
 		queue.put(window)
 
 class SensorInput:
@@ -36,7 +36,7 @@ class SensorInput:
 
 	def is_done(self):
 		return False
-		
+
 	def has_next(self):
 		return not self.queue.empty()
 
@@ -53,7 +53,7 @@ class FileInput:
 		print(self.data[:200])
 	def is_done(self):
 		return self.has_next() == 0
-		
+
 	def has_next(self):
 		return self.data.shape[0] > 0
 

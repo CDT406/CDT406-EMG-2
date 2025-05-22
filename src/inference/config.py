@@ -17,8 +17,9 @@ def str2enum(s):
 class Config:
     def __init__(self, toml_path):
         data = toml.load(toml_path)
-        fstats = data['feature_stats']
+        fstats = data['preprocessing_config']
         model = data['model']
+        self.window_normalization = data['window_normalization']
         self.sampling_rate = fstats['sampling_rate']
         self.read_window_size = fstats['window_size']
         self.window_overlap = fstats['window_overlap']
@@ -32,7 +33,7 @@ class Config:
         self.normalization = str2enum(fstats['normalization'])
         self.model_path = model['model_file_path']
         self.file_path = model['test_file_path']
-        self.preprocessing_stats = data['preprocessing_config']
+        self.feature_stats = data['feature_stats']
         self.log_path = model['log_file_path']
         self.buffer_len = model['buffer_len']
         self.timeout = model['timeout']
