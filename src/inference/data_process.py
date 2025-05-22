@@ -15,6 +15,7 @@ class DataProcess:
         self.buffer = deque(maxlen=config.buffer_len)
         self.finalized_data = deque(maxlen=config.windows_count)
         self.step = round(config.read_window_size * config.window_overlap)
+        self.index = 0
         self.logger = logger
 
 
@@ -43,7 +44,11 @@ class DataProcess:
             if self.data_input.is_done():
                 return None
 
-        window = np.array(self.buffer, dtype=np.float32).flatten()[self.config.read_window_size - self.step:]
+        window = np.array(self.buffer, dtype=np.float32).flatten()[self.index:self.index+self.config.read_window_size]
+        self.index += self.step
+        if self.index + self.config.read_window_size >= self.config.read_window_size * len(self.buffer):
+            self.index = (self.index + self.step) % (self.config.read_window_size * len(self.buffer))
+
         processed_window = self._process_window(window)
         return processed_window
 

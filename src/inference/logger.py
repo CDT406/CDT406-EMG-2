@@ -9,9 +9,12 @@ class Logger:
         self.has_written_header = False
         print(f"Logger initialized at {self.path}")
 
+
     def __del__(self):
         self.file.close()
+        self.plot_output_state()
         print(f"Logger closed at {self.path}")
+
 
     def log_input_data(self, input_data):
         self.buffer.extend(input_data)
@@ -58,7 +61,8 @@ class Logger:
         _time = [time] * len(input_data)
 
         if not self.has_written_header:
-            self.file.write(f"time/input_data/output_state{'/a/b/c/d'[:len(output_data)*2]}\n")
+            states = ["/rest","/grip","/hold","/release"]
+            self.file.write(f"time/input_data/output_state{map(lambda i: states[i], range(output_data))}\n")
             self.has_written_header = True
 
         for t, i, s, o in zip(_time, input_data, output_state, output_data):

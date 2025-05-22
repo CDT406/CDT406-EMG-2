@@ -40,8 +40,7 @@ if __name__ == '__main__':
 
         #print(window)
         output_state = model.get_output_state(window)
-        #output_state = model.get_output_state(np.random.rand(1, 3, 4).astype(np.float32)*10)
-        print(output_state)
+        fart_state = output_state.tolist().index(max(output_state.tolist()))
+        print(["REST   ", "GRIP   ", "HOLD   ", "RELEASE"][output_state], end='\r', flush=True)
         led_control.set_state(output_state)
         
-    logger.plot_output_state()
