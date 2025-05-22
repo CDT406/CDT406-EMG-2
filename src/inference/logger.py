@@ -56,16 +56,20 @@ class Logger:
         input_data = self.buffer
         self.buffer = []
         output_data = output_data.tolist()
-        output_state = [output_data.index(max(output_data))] * len(input_data)
-        output_data = [output_data] * len(input_data)
-        _time = [time] * len(input_data)
-
+        
+        
         if not self.has_written_header:
             #SHAME
             states = ["/rest","/grip","/hold","/release"]
             states = "".join([states[i] for i in range(len(output_data))])
             self.file.write(f"time/input_data/output_state{states}\n")
             self.has_written_header = True
+
+
+        output_state = [output_data.index(max(output_data))] * len(input_data)
+        output_data = [output_data] * len(input_data)
+        _time = [time] * len(input_data)
+
 
         for t, i, s, o in zip(_time, input_data, output_state, output_data):
             self.file.write(f"{t}/{i}/{s}/{'/'.join(map(str, o))}\n".replace('.', ','))
