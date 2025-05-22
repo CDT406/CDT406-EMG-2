@@ -7,6 +7,7 @@ import json
 import sqlite3
 import inspect
 import toml
+import matplotlib.pyplot as plt
 
 from downsample import load_and_downsample, SAMPLING_RATE
 from windowing import create_windows, DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP
@@ -171,40 +172,65 @@ class EMGPreprocessor:
         self.global_mean, self.global_std = calculate_global_window_stats(data_dir)
     
     def process_file(self, file_path):
-        """
-        Process a single EMG data file.
-        
-        Args:
-            file_path (str): Path to the EMG data file
-        
-        Returns:
-            tuple: (person_id, processed_data)
-        """
-        # Extract person_id from the folder name
+        """Process a single EMG data file."""
         person_id = int(Path(file_path).parent.name)
-        
         print(f"Processing file: {file_path}")
         
         # Load and downsample the data
         downsampled_data = load_and_downsample(file_path)
-        print(f"  - Downsampled from {len(downsampled_data)} samples")
         
-        # Create windows
+        # Plot full signal if this is person 1's first file
+        if person_id == 1:
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 8))
+            
+            # Plot raw signal
+            ax1.plot(downsampled_data['voltage'])
+            ax1.set_title('Raw EMG Signal - Person 1')
+            ax1.set_ylabel('Amplitude')
+            
+            # Normalize and plot full signal
+            normalized_signal = (downsampled_data['voltage'] - self.global_mean) / self.global_std
+            ax2.plot(normalized_signal)
+            ax2.set_title('Normalized EMG Signal - Person 1')
+            ax2.set_ylabel('Normalized Amplitude')
+            ax2.set_xlabel('Sample')
+            
+            plt.tight_layout()
+            plt.show()
+        
+        # Continue with normal processing...
         windows = create_windows(
             downsampled_data,
             self.window_size_ms,
             self.overlap_percentage
         )
-        print(f"  - Created {len(windows)} windows")
         
         # Extract features using global normalization
         processed_data = []
-        for window_data, window_label in windows:
-            # Normalize using global stats
+        for i, (window_data, window_label) in enumerate(windows):
+            # Plot first window
+            if i == 0:
+                # Create figure with two subplots
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
+                
+                # Plot raw signal
+                ax1.plot(window_data['voltage'])
+                ax1.set_title('Raw EMG Signal')
+                ax1.set_ylabel('Amplitude')
+                
+                # Normalize and plot
+                normalized_window = normalize_window(window_data, self.global_mean, self.global_std)
+                ax2.plot(normalized_window)
+                ax2.set_title('Normalized EMG Signal')
+                ax2.set_ylabel('Normalized Amplitude')
+                ax2.set_xlabel('Sample')
+                
+                plt.tight_layout()
+                plt.show()
+            
+            # Normal processing continues...
             normalized_window = normalize_window(window_data, self.global_mean, self.global_std)
             window_data['voltage'] = normalized_window
-            
-            # Extract features from normalized window
             features = extract_features(window_data['voltage'])
             features['label'] = int(window_label)
             processed_data.append(features)
