@@ -62,16 +62,20 @@ class DataProcess:
 
     def _process_window(self, window):
         if (len(self.config.features) > 0):
-            window = np.array(self._bandpass_filter(window))
+            window = np.array(window)
+           # window = np.array(self._bandpass_filter(window))
 
             #normalize the window
             if self.config.normalization == Normalization.No:
                 pass
             elif self.config.normalization == Normalization.MinMax:
                 window = (window - np.min(window)) / (np.max(window) - np.min(window))
+                exit(-1) # TODO FIX THIS
             elif self.config.normalization == Normalization.MeanStd:
                 window = (window - self.config.window_normalization['global_mean']) / self.config.window_normalization['global_std']
 
+            #breakpoint()
+            #window = np.array(self._bandpass_filter(window))
             features = extract_features(
                 window=window,
                 features=self.config.features,

@@ -36,3 +36,4 @@ class Config:
         self.feature_stats = data['feature_stats']
         self.log_path = model['log_file_path']
         self.buffer_len = model['buffer_len']
+        self.timeout = model['timeout']

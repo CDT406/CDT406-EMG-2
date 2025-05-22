@@ -5,7 +5,7 @@ from logger import Logger
 from config import Config
 from model_loader import Model
 import numpy as np
-
+import time
 
 def get_data_input(type='File'):
     if type == 'File':
@@ -28,10 +28,16 @@ if __name__ == '__main__':
     data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input_data)
     model = Model(model_path=config.model_path, logger=logger.log_output_data)
 
+    start_time = time.time()
+
     while 1:
         window = data_process.get_next()
         if window is None:
             break
+        
+        if time.time() - start_time > config.timeout:
+            break
+
         #print(window)
         output_state = model.get_output_state(window)
         #output_state = model.get_output_state(np.random.rand(1, 3, 4).astype(np.float32)*10)
