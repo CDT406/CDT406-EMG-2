@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 class Logger:
     
@@ -21,8 +23,6 @@ class Logger:
 
 
     def plot_output_state(self, output_png='output/output_state_plot.png'):
-        import pandas as pd
-        import matplotlib.pyplot as plt
         # Read the CSV file, using '/' as separator, and replace ',' with '.' for decimals
         with open(self.path, 'r') as f:
             lines = f.readlines()
