@@ -22,7 +22,7 @@ features = ["MAV", "WL", "WAMP", "MAVS"]
 normalization = "MeanStd"
 
 [model]
-model_file_path = "output/SavedModels/RNN2/Saved_models/model.tflite"
+model_file_path = "output/SavedModels/RNN2/Saved_models/NyModellMedNyDatabas/model.tflite"
 test_file_path = 'datasets/official/unprocessed/relabeled_old_dataset/2/edited_0205-133839record_N.csv'
 log_file_path = 'output/Log/log.csv'
 timeout = 50

@@ -14,6 +14,17 @@ window_size = 200
 window_overlap = 0.5
 sequence_length = 3
 windows_count = 3
+low_cut = 20
+high_cut = 450
+filter_order = 4
 wamp_threshold = 0.02
 features = [ "MAV", "WL", "WAMP", "MAVS",]
 normalization = "MeanStd"
+
+
+[model]
+model_file_path = "output/SavedModels/RNN2/Saved_models/model.tflite"
+test_file_path = 'datasets/official/unprocessed/relabeled_old_dataset/2/edited_0205-133839record_N.csv'
+log_file_path = 'output/Log/log.csv'
+timeout = 50
+buffer_len = 2
