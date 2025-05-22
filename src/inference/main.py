@@ -41,6 +41,6 @@ if __name__ == '__main__':
         #print(window)
         output_state = model.get_output_state(window)
         fart_state = output_state.tolist().index(max(output_state.tolist()))
-        print(["REST   ", "GRIP   ", "HOLD   ", "RELEASE"][output_state], end='\r', flush=True)
+        print(["REST   ", "GRIP   ", "HOLD   ", "RELEASE"][fart_state], end='\r', flush=True)
         led_control.set_state(output_state)
         
