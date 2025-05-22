@@ -5,7 +5,7 @@ class Logger:
     def __init__(self, path='output/output.csv'):
         self.path = path
         self.file = open(self.path, 'w')
-        self.file.write("time, input_data, output_state, output_data\n")
+        self.file.write("time/input_data/output_state/output_data\n")
         self.buffer = []
         print(f"Logger initialized at {self.path}")
 
@@ -27,5 +27,5 @@ class Logger:
         _time = [time] * len(input_data)
 
         for t, i, s, o in zip(_time, input_data, output_state, output_data):
-            self.file.write(f"{t}, {i}, {s}, {','.join(map(str, o))}\n")
+            self.file.write(f"{t}/{i}/{s}/{'/'.join(map(str, o))}\n")
         self.file.flush()
