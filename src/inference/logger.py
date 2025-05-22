@@ -5,8 +5,8 @@ class Logger:
     def __init__(self, path='output/output.csv'):
         self.path = path
         self.file = open(self.path, 'w')
-        self.file.write("time/input_data/output_state/output_data\n")
         self.buffer = []
+        self.has_written_header = False
         print(f"Logger initialized at {self.path}")
 
     def __del__(self):
@@ -26,6 +26,10 @@ class Logger:
         output_data = [output_data] * len(input_data)
         _time = [time] * len(input_data)
 
+        if not self.has_written_header:
+            self.file.write(f"time/input_data/output_state{'/a/b/c/d'[:len(output_data)*2]}\n")
+            self.has_written_header = True
+
         for t, i, s, o in zip(_time, input_data, output_state, output_data):
-            self.file.write(f"{t}/{i}/{s}/{'/'.join(map(str, o))}\n")
+            self.file.write(f"{t}/{i}/{s}/{'/'.join(map(str, o))}\n".replace('.', ','))
         self.file.flush()
