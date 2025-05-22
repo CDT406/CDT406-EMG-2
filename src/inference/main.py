@@ -43,3 +43,5 @@ if __name__ == '__main__':
         #output_state = model.get_output_state(np.random.rand(1, 3, 4).astype(np.float32)*10)
         print(output_state)
         led_control.set_state(output_state)
+        
+    logger.plot_output_state()

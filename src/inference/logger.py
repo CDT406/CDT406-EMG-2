@@ -16,6 +16,37 @@ class Logger:
     def log_input_data(self, input_data):
         self.buffer.extend(input_data)
 
+
+    def plot_output_state(self, output_png='output/output_state_plot.png'):
+        import pandas as pd
+        import matplotlib.pyplot as plt
+        # Read the CSV file, using '/' as separator, and replace ',' with '.' for decimals
+        with open(self.path, 'r') as f:
+            lines = f.readlines()
+        header = lines[0].strip().split('/')
+        data = [line.strip().split('/') for line in lines[1:]]
+        df = pd.DataFrame(data, columns=header)
+        
+        # Convert relevant columns to float
+        df['time'] = df['time'].str.replace(',', '.').astype(float)
+        df['output_state'] = df['output_state'].astype(int)
+        
+        # Plot with color based on output_state
+        colors = ['red', 'green', 'blue', 'orange', 'purple', 'cyan', 'black']
+        plt.figure(figsize=(12, 4))
+        for state in df['output_state'].unique():
+            mask = df['output_state'] == str(state)
+            plt.scatter(df['time'][mask], df['output_state'][mask], 
+                        color=colors[int(state) % len(colors)], label=f'State {state}', s=10)
+        plt.xlabel('Time')
+        plt.ylabel('Output State')
+        plt.title('Output State over Time')
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(output_png)
+        plt.close()
+
+
     # Input data is a 1D numpy array of raw input data
     # Output data is a 1D numpy array of percentage values
     def log_output_data(self, output_data, time): 
