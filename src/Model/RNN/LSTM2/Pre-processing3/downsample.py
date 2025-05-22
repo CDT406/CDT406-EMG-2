@@ -38,9 +38,13 @@ def load_and_downsample(file_path, original_fs=5000, target_fs=SAMPLING_RATE):
     Returns:
         pd.DataFrame: Downsampled signal data
     """
-    # Load the data
-    data = pd.read_csv(file_path, header=None)
+    # Load the data with headers
+    data = pd.read_csv(file_path)
+    
+    # Rename columns to match expected format
     data.columns = ['time', 'voltage', 'label']
+    if 'measurement' in data.columns:
+        data = data.rename(columns={'measurement': 'voltage'})
     
     # Downsample
     return downsample_signal(data, original_fs, target_fs)

@@ -1,0 +1,8 @@
+[preprocessing_config]
+sampling_rate = 1000
+window_size = 200
+window_overlap = 0.5
+sequence_length = 3
+savgol_window = 11
+savgol_order = 3
+normalization = "min_max"

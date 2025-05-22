@@ -1,0 +1,27 @@
+{
+  "window_size_ms": 200,
+  "overlap_percentage": 0.5,
+  "sampling_rate": 1000,
+  "num_persons": 9,
+  "cycles_per_person": {
+    "1": 5,
+    "2": 5,
+    "3": 4,
+    "4": 5,
+    "5": 5,
+    "6": 5,
+    "7": 5,
+    "8": 5,
+    "9": 5
+  },
+  "features": [
+    "MAV",
+    "WL",
+    "WAMP",
+    "MAVS"
+  ],
+  "normalization": {
+    "type": "feature-wise",
+    "config_location": "preprocessing_config.toml"
+  }
+}

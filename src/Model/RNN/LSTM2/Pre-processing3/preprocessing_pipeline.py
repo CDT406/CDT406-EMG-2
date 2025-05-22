@@ -7,17 +7,10 @@ import json
 import sqlite3
 import inspect
 import toml
-import matplotlib.pyplot as plt
 
 from downsample import load_and_downsample, SAMPLING_RATE
 from windowing import create_windows, DEFAULT_WINDOW_SIZE, DEFAULT_OVERLAP
-from feature_extraction import (
-    extract_features, 
-    LOW_CUT, 
-    HIGH_CUT, 
-    FILTER_ORDER, 
-    WAMP_THRESHOLD
-)
+from feature_extraction import extract_features, WAMP_THRESHOLD  # Remove filter imports
 
 def get_module_params():
     """Collect parameters from all preprocessing modules"""
@@ -31,13 +24,8 @@ def get_module_params():
         'sequence_length': (3, 'int'),  # LSTM sequence length
         'windows_count': (3, 'int'),
         
-        # From feature_extraction.py
-        'low_cut': (LOW_CUT, 'int'),
-        'high_cut': (HIGH_CUT, 'int'),
-        'filter_order': (FILTER_ORDER, 'int'),
-        'wamp_threshold': (WAMP_THRESHOLD, 'float'),
-        
         # Feature configuration
+        'wamp_threshold': (WAMP_THRESHOLD, 'float'),
         'features': (','.join(['MAV', 'WL', 'WAMP', 'MAVS']), 'list'),
         'normalization': ('MeanStd', 'str'),
     }
@@ -179,26 +167,7 @@ class EMGPreprocessor:
         # Load and downsample the data
         downsampled_data = load_and_downsample(file_path)
         
-        # Plot full signal if this is person 1's first file
-        if person_id == 1:
-            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 8))
-            
-            # Plot raw signal
-            ax1.plot(downsampled_data['voltage'])
-            ax1.set_title('Raw EMG Signal - Person 1')
-            ax1.set_ylabel('Amplitude')
-            
-            # Normalize and plot full signal
-            normalized_signal = (downsampled_data['voltage'] - self.global_mean) / self.global_std
-            ax2.plot(normalized_signal)
-            ax2.set_title('Normalized EMG Signal - Person 1')
-            ax2.set_ylabel('Normalized Amplitude')
-            ax2.set_xlabel('Sample')
-            
-            plt.tight_layout()
-            plt.show()
-        
-        # Continue with normal processing...
+        # Create windows
         windows = create_windows(
             downsampled_data,
             self.window_size_ms,
@@ -207,32 +176,18 @@ class EMGPreprocessor:
         
         # Extract features using global normalization
         processed_data = []
-        for i, (window_data, window_label) in enumerate(windows):
-            # Plot first window
-            if i == 0:
-                # Create figure with two subplots
-                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
-                
-                # Plot raw signal
-                ax1.plot(window_data['voltage'])
-                ax1.set_title('Raw EMG Signal')
-                ax1.set_ylabel('Amplitude')
-                
-                # Normalize and plot
-                normalized_window = normalize_window(window_data, self.global_mean, self.global_std)
-                ax2.plot(normalized_window)
-                ax2.set_title('Normalized EMG Signal')
-                ax2.set_ylabel('Normalized Amplitude')
-                ax2.set_xlabel('Sample')
-                
-                plt.tight_layout()
-                plt.show()
-            
-            # Normal processing continues...
+        for window_data, window_label in windows:
+            # Normalize window using global stats
             normalized_window = normalize_window(window_data, self.global_mean, self.global_std)
             window_data['voltage'] = normalized_window
             features = extract_features(window_data['voltage'])
-            features['label'] = int(window_label)
+            
+            # Map label 4 to 0
+            label = int(window_label)
+            if label == 4:
+                label = 0
+            features['label'] = label
+            
             processed_data.append(features)
         
         print(f"  - Extracted features for all windows")
@@ -350,7 +305,6 @@ class EMGPreprocessor:
 
 def save_combined_config(output_dir, preprocessing_params, feature_stats, global_window_stats):
     """Save config including global window statistics."""
-    # Update save location to Saved_models
     save_dir = os.path.join('src', 'Model', 'RNN', 'LSTM2', 'Saved_models')
     os.makedirs(save_dir, exist_ok=True)
     
@@ -371,9 +325,6 @@ def save_combined_config(output_dir, preprocessing_params, feature_stats, global
             'window_overlap': preprocessing_params['window_overlap'][0],
             'sequence_length': preprocessing_params['sequence_length'][0],
             'windows_count': preprocessing_params['windows_count'][0],
-            'low_cut': preprocessing_params['low_cut'][0],
-            'high_cut': preprocessing_params['high_cut'][0],
-            'filter_order': preprocessing_params['filter_order'][0],
             'wamp_threshold': preprocessing_params['wamp_threshold'][0],
             'features': preprocessing_params['features'][0].split(','),
             'normalization': preprocessing_params['normalization'][0]
@@ -388,8 +339,8 @@ def save_combined_config(output_dir, preprocessing_params, feature_stats, global
     print(f"Saved configuration to {toml_path}")
 
 def main():
-    # Define paths
-    data_dir = 'datasets/official/unprocessed/relabeled_old_dataset'
+    # Update path to new dataset
+    data_dir = 'datasets/OsirisPrime CDT406-Smart-Gripper master data-processed/firm_final_labeled_data'
     output_dir = 'src/Model/RNN/LSTM2/Pre-processing3/processed_data'
     
     # Create and run preprocessor
@@ -400,7 +351,7 @@ def main():
         overlap_percentage=0.5  # 50% overlap
     )
 
+    preprocessor.process_all_files()
 
-    preprocessor.process_all_files()    
 if __name__ == '__main__':
     main()

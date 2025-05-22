@@ -1,8 +1,5 @@
 import numpy as np
 
-LOW_CUT = 20  # Low cutoff frequency in Hz
-HIGH_CUT = 450  # High cutoff frequency in Hz
-FILTER_ORDER = 4  # Butterworth filter order
 WAMP_THRESHOLD = 0.02  # Willison amplitude threshold
 
 def extract_features(window_data):
