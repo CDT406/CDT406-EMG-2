@@ -61,8 +61,10 @@ class Logger:
         _time = [time] * len(input_data)
 
         if not self.has_written_header:
+            #SHAME
             states = ["/rest","/grip","/hold","/release"]
-            self.file.write(f"time/input_data/output_state{map(lambda i: states[i], range(output_data))}\n")
+            states = "".join([states[i] for i in range(len(output_data))])
+            self.file.write(f"time/input_data/output_state{states}\n")
             self.has_written_header = True
 
         for t, i, s, o in zip(_time, input_data, output_state, output_data):

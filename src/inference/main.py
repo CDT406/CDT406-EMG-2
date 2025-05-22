@@ -24,7 +24,7 @@ if __name__ == '__main__':
     config = Config('output/SavedModels/RNN2/Saved_models/preprocessing_config.toml')
     logger = Logger(config.log_path)
     led_control = LedControl()
-    data_input = get_data_input('File')
+    data_input = get_data_input('Sensor')
     data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input_data)
     model = Model(model_path=config.model_path, logger=logger.log_output_data)
 
