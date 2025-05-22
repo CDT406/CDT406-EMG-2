@@ -15,8 +15,8 @@ def load_processed_data(data_path):
     with open(data_path, 'r') as f:
         return json.load(f)
 
-def create_sequences(data, sequence_length=3):
-    """Create sequences of 3 consecutive windows with their features."""
+def create_sequences(data, sequence_length=3, mode='4state'):
+    """Create sequences with label mapping based on mode."""
     X, y = [], []
     
     for person_id, cycles in data.items():
@@ -24,11 +24,15 @@ def create_sequences(data, sequence_length=3):
             features = [[w['MAV'], w['WL'], w['WAMP'], w['MAVS']] for w in windows]
             labels = [w['label'] for w in windows]
             
+            # Map labels for 2-state mode (0->0, {1,2,3}->1)
+            if mode == '2state':
+                labels = [0 if label == 0 else 1 for label in labels]
+            
             # Create sequences
             for i in range(len(features) - sequence_length + 1):
                 seq = features[i:i + sequence_length]
-                X.append(np.array(seq).flatten())  # Flatten 3x4 into 12 features
-                y.append(labels[i + sequence_length - 1])  # Label of newest window
+                X.append(np.array(seq).flatten())
+                y.append(labels[i + sequence_length - 1])
     
     return np.array(X), np.array(y)
 
