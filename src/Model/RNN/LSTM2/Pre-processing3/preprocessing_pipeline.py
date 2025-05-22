@@ -119,17 +119,16 @@ def save_feature_stats(stats, output_dir):
 
 # Also add this helper function
 def convert_to_serializable(data):
-    """Convert numpy types to Python native types for JSON serialization"""
-    if isinstance(data, dict):
-        return {k: convert_to_serializable(v) for k, v in data.items()}
+    """Convert numpy types to Python native types for JSON serialization."""
+    if isinstance(data, (np.int64, np.int32, np.int16, np.int8)):
+        return int(data)
+    elif isinstance(data, (np.float64, np.float32)):
+        return float(data)
+    elif isinstance(data, dict):
+        return {key: convert_to_serializable(value) for key, value in data.items()}
     elif isinstance(data, list):
         return [convert_to_serializable(item) for item in data]
-    elif isinstance(data, np.integer):
-        return int(data)
-    elif isinstance(data, np.floating):
-        return float(data)
-    else:
-        return data
+    return data
 
 def normalize_window(window_data, global_mean, global_std):
     """Normalize window using global statistics."""
@@ -245,23 +244,23 @@ class EMGPreprocessor:
         with open(output_file, 'w') as f:
             json.dump(serializable_data, f, indent=2)
         
-        # Update metadata to include normalization info
-        metadata = {
+        # Convert metadata to serializable format before saving
+        metadata = convert_to_serializable({
             'window_size_ms': self.window_size_ms,
             'overlap_percentage': self.overlap_percentage,
             'sampling_rate': 1000,
             'num_persons': len(all_processed_data),
             'cycles_per_person': {str(person_id): len(cycles) 
-                                 for person_id, cycles in all_processed_data.items()},
+                                for person_id, cycles in all_processed_data.items()},
             'features': ['MAV', 'WL', 'WAMP', 'MAVS'],
             'normalization': {
                 'type': 'feature-wise',
-                'config_location': 'preprocessing_config.toml'  # Updated to TOML
+                'config_location': 'preprocessing_config.toml'
             }
-        }
+        })
         
+        # Save metadata
         metadata_file = os.path.join(self.output_dir, 'metadata.json')
-        print(f"Saving metadata to {metadata_file}...")
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
         
