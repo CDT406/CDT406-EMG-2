@@ -23,3 +23,4 @@ test_file_path = 'datasets/official/unprocessed/slow/2/0205-133530record.csv'
 log_file_path = 'output/Log/log.csv'
 timeout = 10
 buffer_len = 2
+model_states = ['Grip', 'Rest', 'Hold', 'Release']

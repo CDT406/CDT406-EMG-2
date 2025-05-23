@@ -37,3 +37,4 @@ class Config:
         self.log_path = model['log_file_path']
         self.buffer_len = model['buffer_len']
         self.timeout = model['timeout']
+        self.model_states = model['model_states']
