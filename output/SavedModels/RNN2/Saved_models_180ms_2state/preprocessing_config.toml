@@ -27,4 +27,4 @@ test_file_path = 'datasets/official/unprocessed/relabeled_old_dataset/2/edited_0
 log_file_path = 'output/Log/log.csv'
 timeout = 50
 buffer_len = 2
-model_states = ['Grip', 'Rest', 'Hold', 'Release']
+model_states = ['Rest', 'Grip', 'Hold', 'Release']
