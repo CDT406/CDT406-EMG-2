@@ -22,7 +22,7 @@ def read_sensor(queue, analog_pin="P9_33", sampling_rate=1000, window_size=200):
 
 	while True:
 		for i in range(window_size):
-			window[i] = ADC.read(analog_pin) * 3.3 # max output from sparkfun hearbeat sensor
+			window[i] = ADC.read(analog_pin) * 3.7 # max output from sparkfun hearbeat sensor
 
 		queue.put(window)
 
