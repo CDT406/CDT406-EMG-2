@@ -7,24 +7,26 @@ from model_loader import Model
 import numpy as np
 import time
 
-def get_data_input(type='File'):
-    if type == 'File':
+def get_data_input(type='file'):
+    if type == 'file':
         return FileInput(
                 file_name=config.file_path,
                 sampling_rate=config.sampling_rate,
                 window_size=config.read_window_size
             )
-    elif type == 'Sensor':
+    elif type == 'sensor':
         return SensorInput(sampling_rate=config.sampling_rate, window_size=config.read_window_size)
     else:
         raise Exception("Wrong input type")
 
 
 if __name__ == '__main__':
+    data_source = 'file'
+    print(f"Using data from {data_source}")
     config = Config('output/SavedModels/RNN2/Saved_models_180ms_2state/preprocessing_config.toml')
     logger = Logger(config.log_path, config.model_states)
     led_control = LedControl()
-    data_input = get_data_input('Sensor')
+    data_input = get_data_input(data_source)
     data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input_data)
     model = Model(model_path=config.model_path, logger=logger.log_output_data)
 
