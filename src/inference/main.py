@@ -21,7 +21,7 @@ def get_data_input(type='File'):
 
 
 if __name__ == '__main__':
-    config = Config('output/SavedModels/RNN2/Saved_models/NyModellMedNyDatabas/preprocessing_config.toml')
+    config = Config('output\SavedModels\RNN2\Saved_models_180ms_2state\preprocessing_config.toml')
     logger = Logger(config.log_path, config.model_states)
     led_control = LedControl()
     data_input = get_data_input('Sensor')
