@@ -33,7 +33,7 @@ if __name__ == '__main__':
     while 1:
         window = data_process.get_next()
         if window is None:
-            break
+            continue
 
         if time.time() - start_time > config.timeout:
             break
