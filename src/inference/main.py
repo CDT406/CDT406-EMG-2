@@ -23,7 +23,7 @@ def get_data_input(type='file'):
 if __name__ == '__main__':
     data_source = 'file'
     print(f"Using data from {data_source}")
-    config = Config('output/SavedModels/RNN2/Saved_models_180ms_2state/preprocessing_config.toml')
+    config = Config('output/SavedModels/RNN2/Saved_models_180ms/preprocessing_config.toml')
     logger = Logger(config.log_path, config.model_states)
     led_control = LedControl()
     data_input = get_data_input(data_source)
