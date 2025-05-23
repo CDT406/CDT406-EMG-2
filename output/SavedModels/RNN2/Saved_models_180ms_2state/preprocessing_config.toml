@@ -10,7 +10,7 @@ MAVS = [ 2.1920163933068703e-6, 0.14523720666716272,]
 
 [preprocessing_config]
 sampling_rate = 1000
-window_size = 200
+window_size = 300
 window_overlap = 0.5
 sequence_length = 3
 windows_count = 3
