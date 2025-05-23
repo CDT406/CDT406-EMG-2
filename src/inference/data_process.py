@@ -42,7 +42,7 @@ class DataProcess:
                 return None
 
         window = np.array(self.buffer, dtype=np.float32).flatten()[self.index:self.index+self.config.read_window_size]
-    
+
         self.index += self.step
         if self.index + self.config.read_window_size >= self.config.read_window_size * self.buffer.maxlen:
             self.index -= self.config.read_window_size
@@ -79,8 +79,7 @@ class DataProcess:
             elif self.config.normalization == Normalization.MeanStd:
                 window = (window - self.config.window_normalization['global_mean']) / self.config.window_normalization['global_std']
 
-            #breakpoint()
-            window = np.array(self._bandpass_filter(window))
+            #window = np.array(self._bandpass_filter(window))
             features = extract_features(
                 window=window,
                 features=self.config.features,
