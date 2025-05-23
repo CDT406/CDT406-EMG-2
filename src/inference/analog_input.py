@@ -18,13 +18,11 @@ def read_sensor(queue, analog_pin="P9_33", sampling_rate=1000, window_size=200):
 	assert(sampling_rate == 1000, "Frequency must be 1000Hz dumb dumb code")
 
 	window = np.zeros(window_size, dtype=np.float32)
-	sleep = 0.0003273
 	ADC.setup()
 
 	while True:
 		for i in range(window_size):
 			window[i] = ADC.read(analog_pin) * 2.95 # max output from sparkfun hearbeat sensor
-			time.sleep(sleep)
 
 		queue.put(window)
 
@@ -50,7 +48,7 @@ class FileInput:
 	def __init__(self, file_name="output.csv", sampling_rate=1000, window_size=200):
 		self.data = np.loadtxt(file_name, delimiter=",", dtype=np.float32)[:,1]
 		self.window_size = window_size
-		
+
 	def is_done(self):
 		return self.has_next() == 0
 
