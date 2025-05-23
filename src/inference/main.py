@@ -22,7 +22,8 @@ def get_data_input(type='File'):
 
 if __name__ == '__main__':
     config = Config('output/SavedModels/RNN2/Saved_models/NyModellMedNyDatabas/preprocessing_config.toml')
-    logger = Logger(config.log_path)
+    breakpoint()
+    logger = Logger(config.log_path, config.model_states)
     led_control = LedControl()
     data_input = get_data_input('Sensor')
     data_process = DataProcess(config=config, data_input=data_input, logger=logger.log_input_data)
@@ -34,7 +35,7 @@ if __name__ == '__main__':
         window = data_process.get_next()
         if window is None:
             break
-        
+
         if time.time() - start_time > config.timeout:
             break
 
@@ -43,4 +44,3 @@ if __name__ == '__main__':
         fart_state = output_state.tolist().index(max(output_state.tolist()))
         print(["REST   ", "GRIP   ", "HOLD   ", "RELEASE"][fart_state], end='\r', flush=True)
         led_control.set_state(output_state)
-        
